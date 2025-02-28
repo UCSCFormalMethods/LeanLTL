@@ -10,7 +10,7 @@ namespace LeanLTL
 
 namespace TraceSet
 variable {σ σ' σ'' α α' β β': Type*}
-variable {t : Trace σ} {f f₁ f₂ : TraceSet σ}
+variable {t : Trace σ} {f f₁ f₂ f₃ : TraceSet σ}
 
 @[ext]
 protected def ext {f g : TraceSet σ} (h : ∀ t, (t ⊨ f) ↔ (t ⊨ g)) : f = g := by
@@ -60,13 +60,76 @@ protected def ext {f g : TraceSet σ} (h : ∀ t, (t ⊨ f) ↔ (t ⊨ g)) : f =
 
 @[simp] lemma not_not : f.not.not = f := by ext t; simp [push_fltl]
 
-lemma not_wshift_eq (n : ℕ) : (f.sshift n).not = f.not.wshift n := by ext t; simp [push_fltl]
+lemma not_wshift (n : ℕ) : (f.sshift n).not = f.not.wshift n := by ext t; simp [push_fltl]
 
-lemma not_sshift_eq (n : ℕ) : (f.wshift n).not = f.not.sshift n := by ext t; simp [push_fltl]
+lemma not_sshift (n : ℕ) : (f.wshift n).not = f.not.sshift n := by ext t; simp [push_fltl]
 
-lemma not_globally_eq : f.finally.not = f.not.globally := by ext t; simp [push_fltl]
+lemma not_finally : f.finally.not = f.not.globally := by ext t; simp [push_fltl]
 
-lemma not_finally_eq : f.globally.not = f.not.finally := by ext t; simp [push_fltl]
+lemma not_globally : f.globally.not = f.not.finally := by ext t; simp [push_fltl]
+
+lemma not_and : (f₁.and f₂).not = f₁.not.or f₂.not := by ext t; simp [push_fltl, imp_iff_not_or]
+
+lemma not_or : (f₁.or f₂).not = f₁.not.and f₂.not := by ext t; simp [push_fltl]
+
+lemma not_inj_iff : f₁.not = f₂.not ↔ f₁ = f₂ := by
+  constructor
+  · intro h
+    ext t
+    simpa [push_fltl, not_iff_not] using congr(t ⊨ $h)
+  · simp +contextual
+
+/-!
+### Distributivity
+-/
+
+lemma wshift_and_distrib (n : ℕ) :
+    (f₁.and f₂).wshift n = (f₁.wshift n).and (f₂.wshift n) := by
+  ext t; simp [push_fltl, forall_and]
+
+lemma wshift_or_distrib (n : ℕ) :
+    (f₁.or f₂).wshift n = (f₁.wshift n).or (f₂.wshift n) := by
+  ext t; by_cases n < t.length <;> simp [push_fltl, *]
+
+lemma sshift_and_distrib (n : ℕ) :
+    (f₁.and f₂).sshift n = (f₁.sshift n).and (f₂.sshift n) := by
+  ext t; by_cases n < t.length <;> simp [push_fltl, *]
+
+lemma sshift_or_distrib (n : ℕ) :
+    (f₁.or f₂).sshift n = (f₁.sshift n).or (f₂.sshift n) := by
+  ext t; by_cases n < t.length <;> simp [push_fltl, *]
+
+lemma until_or_distrib (f₁ f₂ f₃: TraceSet σ) :
+    f₁.until (f₂.or f₃) = (f₁.until f₂).or (f₁.until f₃) := by
+  ext t; simp only [push_fltl, exists_or, ← exists_or, ← and_or_left]
+
+lemma until_and_distrib (f₁ f₂ f₃: TraceSet σ) :
+    (f₁.and f₂).until f₃ = (f₁.until f₃).and (f₂.until f₃) := by
+  ext t
+  simp only [push_fltl]
+  constructor
+  . aesop
+  . rintro ⟨⟨n, ⟨h₁, ⟨h_t_n, h₂⟩⟩⟩, ⟨j,⟨h₃,⟨h_t_j,h₄⟩⟩⟩⟩
+    by_cases h₅: n < j
+    . use n
+      simp_all only [true_and, exists_const, and_true]
+      intro i h₅ h_t_i
+      have : i < j := by linarith
+      simp_all
+    . use j
+      simp_all only [true_and, exists_const, and_true]
+      intro i h₅ h_t_i
+      have : i < n := by linarith
+      simp_all
+
+lemma finally_or_distrib (f₁ f₂ : TraceSet σ) : (f₁.or f₂).finally = f₁.finally.or f₂.finally := by
+  ext t; simp [push_fltl, exists_or]
+
+lemma globally_and_distrib (f₁ f₂ : TraceSet σ) : (f₁.and f₂).globally = f₁.globally.and f₂.globally := by
+  ext t; simp [push_fltl, forall_and]
+
+-- TODO: Figure out FLTL equivalent for the following
+-- lemma shift_distribute_until (n : ℕ) : (f₁.until f₂).shift n = ((f₁.shift n).until (f₂.shift n)) := by sorry
 
 
 /-!
