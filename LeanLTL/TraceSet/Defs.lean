@@ -43,14 +43,9 @@ protected def of (p : σ → Prop) : TraceSet σ where
 
 protected def map (g : Prop → Prop) (f : TraceSet σ) : TraceSet σ where
   sat t := g (t ⊨ f)
--- TODO: lemma about toFun, map, and TraceFun.map
---  TraceFun.map g f.toFun
---  defined := mapPreservesSome g f.toFun f.defined
 
 protected def map₂ (g : Prop → Prop → Prop) (f₁ f₂ : TraceSet σ) : TraceSet σ where
   sat t := g (t ⊨ f₁) (t ⊨ f₂)
---  TraceFun.map₂ g f₁.toFun f₂.toFun
---  defined := map₂PreservesSome g f₁.toFun f₂.toFun f₁.defined f₂.defined
 
 end TraceSet
 
@@ -105,7 +100,6 @@ Weak shift.
 -/
 protected def TraceSet.wshift (f : TraceSet σ) (i : ℕ) : TraceSet σ where
   sat t := ∀ h : i < t.length, t.shift i h ⊨ f
--- TODO: thm for (f.toFun.shift i).fixTrueConvert
 
 /--
 Strong shift.
@@ -124,4 +118,4 @@ protected def TraceSet.until (f₁ f₂ : TraceSet σ) : TraceSet σ where
 
 protected def TraceSet.finally (f : TraceSet σ) : TraceSet σ := TraceSet.true.until f
 
-protected def globally (f: TraceSet σ) : TraceSet σ := f.not.finally.not
+protected def TraceSet.globally (f: TraceSet σ) : TraceSet σ := f.not.finally.not
