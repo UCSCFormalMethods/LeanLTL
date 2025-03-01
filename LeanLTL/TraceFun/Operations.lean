@@ -1,5 +1,4 @@
-import LeanLTL.TraceFun.Defs
-import LeanLTL.TraceSet.Defs
+import LeanLTL.TraceSet.ToFun
 import Mathlib
 
 /-!

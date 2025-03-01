@@ -1,4 +1,4 @@
-import LeanLTL.TraceFun.Defs
+import LeanLTL.Trace.Defs
 
 /-!
 # Sets of traces
@@ -25,10 +25,6 @@ structure TraceSet (σ : Type*) where
 -/
 notation t " ⊨ " f => TraceSet.sat f t
 
-protected def TraceSet.toFun (s : TraceSet σ) : TraceFun σ Prop where
-  eval t := some (t ⊨ s)
-
-
 namespace TraceSet
 
 /-- Semantic implication. -/
@@ -49,28 +45,6 @@ protected def map₂ (g : Prop → Prop → Prop) (f₁ f₂ : TraceSet σ) : Tr
 
 end TraceSet
 
-/-!
-### Connection to `TraceFun`
--/
-namespace TraceFun
-
-/--
-Converts a `Prop`-valued `TraceFun` to a `TraceSet`
-by using `c` as its value wherever it is undefined. -/
-protected def toTraceSet (f : TraceFun σ Prop) (c : Prop) : TraceSet σ where
-  sat t := (f t).getD c
-
-/--
-Converts a `Prop`-valued `TraceFun` to a `TraceSet`, with undefined being `False`.
--/
-protected abbrev toTraceSetFalse (f : TraceFun σ Prop) : TraceSet σ := f.toTraceSet False
-
-/--
-Converts a `Prop`-valued `TraceFun` to a `TraceSet`, with undefined being `True`.
--/
-protected abbrev toTraceSetTrue (f : TraceFun σ Prop) : TraceSet σ := f.toTraceSet True
-
-end TraceFun
 
 /-!
 ### LTL constants and operators

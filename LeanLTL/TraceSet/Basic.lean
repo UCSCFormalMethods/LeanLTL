@@ -378,22 +378,3 @@ theorem globally_induction {p : TraceSet σ} (t : Trace σ)
     specialize ih h2
     specialize step n h2 ih (lt_tsub_iff_left.mpr h_n)
     simpa only [add_comm] using step
-
-/-!
-### Theorems about `TraceSet.toFun`
--/
-
-@[simp] lemma toFun_defined (s : TraceSet σ) (t : Trace σ) : (s.toFun t).isSome := rfl
-
-@[simp] lemma toTraceSet_toFun (f : TraceSet σ) (c : Prop) : f.toFun.toTraceSet c = f := rfl
-
--- TODO should `toFun` be pushed inward or pushed outward?
-lemma map_toFun (f : TraceSet σ) (g : Prop → Prop) : f.toFun.map g = (f.map g).toFun := rfl
-
-lemma map₂_toFun (f f' : TraceSet σ) (g : Prop → Prop → Prop) :
-    TraceFun.map₂ g f.toFun f'.toFun = (TraceSet.map₂ g f f').toFun := rfl
-
--- lemma toTraceSet_shift_toFun (f : TraceSet σ) (i : ℕ) :
---     (f.toFun.shift i).toTraceSetTrue = f.wshift i := by
---   ext
---   simp
