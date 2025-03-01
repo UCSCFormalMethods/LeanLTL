@@ -7,6 +7,7 @@ import LeanLTL.TraceFun.Defs
 import LeanLTL.TraceFun.Operations
 import LeanLTL.TraceSet.Basic
 import LeanLTL.TraceSet.Defs
+import LeanLTL.TraceSet.Notation
 import LeanLTL.TraceSet.ToFun
 import LeanLTL.Util.SimpAttrs
 import LeanLTL.ForMathlib

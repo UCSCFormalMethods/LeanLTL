@@ -43,10 +43,15 @@ protected def ext {f g : TraceSet σ} (h : ∀ t, (t ⊨ f) ↔ (t ⊨ g)) : f =
 @[push_fltl] lemma sat_until_iff :
     (t ⊨ f₁.until f₂) ↔ ∃ n, (∀ i < n, t ⊨ f₁.wshift i) ∧ (t ⊨ f₂.sshift n) := Iff.rfl
 
+@[push_fltl] lemma sat_release_iff :
+    (t ⊨ f₁.release f₂) ↔ ∀ (n : ℕ), (∀ i < n, ¬ t ⊨ f₁.sshift i) → (t ⊨ f₂.wshift n) := by
+  simp only [TraceSet.release, push_fltl]
+  simp
+
 @[push_fltl] theorem sat_finally_iff : (t ⊨ f.finally) ↔ ∃ n, t ⊨ f.sshift n := by
   simp [TraceSet.finally, push_fltl]
 
-@[push_fltl] theorem sat_globally_iff : (t ⊨ f.globally) ↔ ∀ n, t ⊨ (f.wshift n) := by
+@[push_fltl] theorem sat_globally_iff : (t ⊨ f.globally) ↔ ∀ n, t ⊨ f.wshift n := by
   simp [TraceSet.globally, push_fltl]
 
 @[push_fltl] theorem sem_imp_iff : (f₁ ⇒ f₂) ↔ ∀ (t : Trace σ), t ⊨ f₁.imp f₂ := by
@@ -109,6 +114,10 @@ lemma not_globally : f.globally.not = f.not.finally := by ext t; simp [push_fltl
 lemma not_and : (f₁.and f₂).not = f₁.not.or f₂.not := by ext t; simp [push_fltl, imp_iff_not_or]
 
 lemma not_or : (f₁.or f₂).not = f₁.not.and f₂.not := by ext t; simp [push_fltl]
+
+lemma not_until : (f₁.until f₂).not = f₁.not.release f₂.not := by simp [TraceSet.release]
+
+lemma not_release : (f₁.release f₂).not = f₁.not.until f₂.not := by simp [TraceSet.release]
 
 lemma not_inj_iff : f₁.not = f₂.not ↔ f₁ = f₂ := by
   constructor

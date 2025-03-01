@@ -88,7 +88,10 @@ protected abbrev TraceSet.snext (f : TraceSet σ) : TraceSet σ := f.sshift 1
 -- TODO: @Daniel, do we want wshift for f₁ here?
 -- TODO: Prove that f₁ can use strong shift instead, or maybe just normal shift?
 protected def TraceSet.until (f₁ f₂ : TraceSet σ) : TraceSet σ where
-  sat t := ∃ n, (∀ i < n, t ⊨ (f₁.wshift i)) ∧ (t ⊨ (f₂.sshift n))
+  sat t := ∃ n, (∀ i < n, t ⊨ f₁.wshift i) ∧ (t ⊨ f₂.sshift n)
+
+protected def TraceSet.release (f₁ f₂ : TraceSet σ) : TraceSet σ :=
+  (f₁.not.until f₂.not).not
 
 protected def TraceSet.finally (f : TraceSet σ) : TraceSet σ := TraceSet.true.until f
 
