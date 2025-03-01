@@ -10,6 +10,11 @@ namespace LeanLTL
 namespace Trace
 variable {σ σ' σ'' α α' β β': Type*}
 
+@[simp] lemma one_lt_succ_length (t : Trace α) : 1 < t.length + 1 := by
+  nth_rewrite 1 [← zero_add 1]
+  rw [enat_cancel']
+  apply t.nempty
+
 lemma toFun_eq {t : Trace σ} (i : ℕ) (h : i < t.length) :
     t.toFun i h = (t.toFun? i).get ((t.defined i).mp h) := rfl
 

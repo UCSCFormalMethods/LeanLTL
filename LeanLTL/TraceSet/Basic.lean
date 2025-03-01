@@ -40,9 +40,6 @@ protected def ext {f g : TraceSet σ} (h : ∀ t, (t ⊨ f) ↔ (t ⊨ g)) : f =
 @[push_fltl] lemma sat_sshift_iff (c : ℕ) :
     (t ⊨ f.sshift c) ↔ ∃ h : c < t.length, t.shift c h ⊨ f := Iff.rfl
 
--- TODO: Unshift simplification for wnext and snext
--- E.g., (t.unshift s) ⊨ (f.wnext) ↔ t⊨f
--- TODO: Dual lemmas for unshift everywhere shift is
 @[push_fltl] lemma sat_until_iff :
     (t ⊨ f₁.until f₂) ↔ ∃ n, (∀ i < n, t ⊨ f₁.wshift i) ∧ (t ⊨ f₂.sshift n) := Iff.rfl
 
@@ -77,14 +74,13 @@ lemma singleton_sat_wshift {s : σ} (c : ℕ) :
   intro
   omega
 
+-- TODO: Dual lemmas for unshift everywhere shift is
+
+@[simp] lemma unshift_sat_snext_iff (s : σ) : (Trace.unshift s t ⊨ f.snext) ↔ (t ⊨ f) := by
+  simp [push_fltl]
+
 @[simp] lemma unshift_sat_wnext_iff (s : σ) : (Trace.unshift s t ⊨ f.wnext) ↔ (t ⊨ f) := by
   simp [push_fltl]
-  left
-  have := t.nempty
-  revert this
-  cases t.length
-  · decide
-  · norm_cast; simp
 
 /-!
 ### Adjunctions
@@ -97,7 +93,7 @@ lemma shift_sat_iff_sat_wshift {n : ℕ} (h : n < t.length) : (t.shift n h ⊨ f
   constructor <;> simp [push_fltl, h]
 
 /-!
-Negation pushing
+### Negation pushing
 -/
 
 @[simp] lemma not_not : f.not.not = f := by ext t; simp [push_fltl]
@@ -327,20 +323,11 @@ theorem until_eq_or_and :
         simp [Trace.shift_unshift_succ] at h3
         have h1' := h1 0 (by simp) (by simp)
         rw [Trace.shift_zero] at h1'
-        refine ⟨h1', ?_, ?_⟩
-        · have := t.nempty
-          revert this
-          cases t.length
-          · intro; apply ENat.coe_lt_top
-          · norm_cast; omega
-        use n
-        constructor
-        · intro i hi ht
-          have := h1 (i + 1) (by omega) (by simp [ht])
-          simpa using this
-        · simp at h2
-          simp [h3, h2]
-    · rintro (h | ⟨h1, h2, n, h3, h4, h5⟩)
+        refine ⟨h1', n, ?_, (by simpa using h2), h3⟩
+        intro i hi ht
+        have := h1 (i + 1) (by omega) (by simp [ht])
+        simpa using this
+    · rintro (h | ⟨h1, n, h3, h4, h5⟩)
       · use 0
         simp [h]
       · use (n + 1)
