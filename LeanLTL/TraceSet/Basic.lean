@@ -369,6 +369,28 @@ lemma unshift_sat_globally_iff (s : σ) :
   rw (occs := [1]) [globally_eq_and_globally]
   simp [push_fltl]
 
+/--
+Induction principle for proving `t ⊨ .globally p`.
+-/
+theorem globally_induction {p : TraceSet σ} (t : Trace σ)
+    (base : t ⊨ p) (step : t ⊨ .globally (p.imp p.wnext)) :
+    t ⊨ .globally p := by
+  simp [push_fltl]
+  intro n h_n
+  induction n
+  . simp; exact base
+  . rename_i n ih
+    simp [push_fltl] at step
+    have h2 : n < t.length := by
+      rw [ENat.coe_add] at h_n
+      simp at h_n
+      refine (ENat.add_one_le_iff ?_).mp ?_
+      exact ENat.coe_ne_top n
+      exact le_of_lt h_n
+    specialize ih h2
+    specialize step n h2 ih (lt_tsub_iff_left.mpr h_n)
+    simpa only [add_comm] using step
+
 /-!
 ### Theorems about `TraceSet.toFun`
 -/

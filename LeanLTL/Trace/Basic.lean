@@ -180,7 +180,7 @@ theorem unshift_cases {p : (t : Trace σ) → Prop}
   generalize hl : t.length = n
   cases n with
   | top =>
-    obtain ⟨_, _, rfl⟩ := exists_unshift t (by simp [hl]; apply ENat.coe_lt_top)
+    obtain ⟨_, _, rfl⟩ := exists_unshift t (by simp [hl])
     apply unshift
   | coe n =>
     obtain _ | _ | n := n
