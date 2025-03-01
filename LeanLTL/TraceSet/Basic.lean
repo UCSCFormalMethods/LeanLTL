@@ -48,6 +48,13 @@ protected def ext {f g : TraceSet σ} (h : ∀ t, (t ⊨ f) ↔ (t ⊨ g)) : f =
   simp only [TraceSet.release, push_fltl]
   simp
 
+/-- Alternative formulation of `sat_release_iff`, without negations. -/
+lemma sat_release_iff' :
+    (t ⊨ f₁.release f₂) ↔ ∀ (n : ℕ), (∃ i < n, t ⊨ f₁.sshift i) ∨ (t ⊨ f₂.wshift n) := by
+  simp only [sat_release_iff, imp_iff_not_or]
+  push_neg
+  rfl
+
 @[push_fltl] theorem sat_finally_iff : (t ⊨ f.finally) ↔ ∃ n, t ⊨ f.sshift n := by
   simp [TraceSet.finally, push_fltl]
 
@@ -174,6 +181,29 @@ lemma sat_wshift_of_sat_sshift (c : ℕ) (h : t ⊨ f.sshift c) : t ⊨ f.wshift
 
 @[simp] lemma and_true : f.and TraceSet.true = f := by ext t; simp [push_fltl]
 
+@[simp] lemma false_and : TraceSet.false.and f = TraceSet.false := by ext t; simp [push_fltl]
+
+@[simp] lemma and_false : f.and TraceSet.false = TraceSet.false := by ext t; simp [push_fltl]
+
+@[simp] lemma false_or : TraceSet.false.or f = f := by ext t; simp [push_fltl]
+
+@[simp] lemma or_false : f.or TraceSet.false = f := by ext t; simp [push_fltl]
+
+@[simp] lemma true_or : TraceSet.true.or f = TraceSet.true := by ext t; simp [push_fltl]
+
+@[simp] lemma or_true : f.or TraceSet.true = TraceSet.true := by ext t; simp [push_fltl]
+
+lemma release_eq_not_until_not : f₁.release f₂ = (f₁.not.until f₂.not).not := rfl
+
+lemma until_eq_not_release_not : f₁.until f₂ = (f₁.not.release f₂.not).not := by
+  simp [release_eq_not_until_not]
+
+lemma finally_eq_not_globally_not : f.finally = f.not.globally.not := by
+  simp [not_globally]
+
+lemma globally_eq_not_finally_not : f.globally = f.not.finally.not := by
+  simp [not_finally]
+
 lemma sshift_until (n : ℕ) : (f₁.until f₂).sshift n = (f₁.sshift n).until (f₂.sshift n) := by
   ext t
   simp [push_fltl]
@@ -249,39 +279,38 @@ lemma sshift_until (n : ℕ) : (f₁.until f₂).sshift n = (f₁.sshift n).unti
     simp
     use n, h1, h2
 
+lemma wshift_release (n : ℕ) : (f₁.release f₂).wshift n = (f₁.wshift n).release (f₂.wshift n) := by
+  rw [release_eq_not_until_not, ← not_sshift, sshift_until, release_eq_not_until_not, not_wshift, not_wshift]
+
+@[simp] theorem release_release : f₁.release (f₁.release f₂) = (f₁.release f₂) := by
+  simp [release_eq_not_until_not]
+
 @[simp] theorem finally_finally : f.finally.finally = f.finally := by
   ext t; simp [TraceSet.finally]
 
 @[simp] theorem globally_globally : f.globally.globally = f.globally := by
   simp [TraceSet.globally]
 
-
 /-!
 ### Distributivity
 -/
 
-lemma wshift_and_distrib (n : ℕ) :
-    (f₁.and f₂).wshift n = (f₁.wshift n).and (f₂.wshift n) := by
+lemma wshift_and_distrib (n : ℕ) : (f₁.and f₂).wshift n = (f₁.wshift n).and (f₂.wshift n) := by
   ext t; simp [push_fltl, forall_and]
 
-lemma wshift_or_distrib (n : ℕ) :
-    (f₁.or f₂).wshift n = (f₁.wshift n).or (f₂.wshift n) := by
+lemma wshift_or_distrib (n : ℕ) : (f₁.or f₂).wshift n = (f₁.wshift n).or (f₂.wshift n) := by
   ext t; by_cases n < t.length <;> simp [push_fltl, *]
 
-lemma sshift_and_distrib (n : ℕ) :
-    (f₁.and f₂).sshift n = (f₁.sshift n).and (f₂.sshift n) := by
+lemma sshift_and_distrib (n : ℕ) : (f₁.and f₂).sshift n = (f₁.sshift n).and (f₂.sshift n) := by
   ext t; by_cases n < t.length <;> simp [push_fltl, *]
 
-lemma sshift_or_distrib (n : ℕ) :
-    (f₁.or f₂).sshift n = (f₁.sshift n).or (f₂.sshift n) := by
+lemma sshift_or_distrib (n : ℕ) : (f₁.or f₂).sshift n = (f₁.sshift n).or (f₂.sshift n) := by
   ext t; by_cases n < t.length <;> simp [push_fltl, *]
 
-lemma until_or_distrib (f₁ f₂ f₃: TraceSet σ) :
-    f₁.until (f₂.or f₃) = (f₁.until f₂).or (f₁.until f₃) := by
+lemma until_or_distrib : f₁.until (f₂.or f₃) = (f₁.until f₂).or (f₁.until f₃) := by
   ext t; simp only [push_fltl, exists_or, ← exists_or, ← and_or_left]
 
-lemma and_until_distrib (f₁ f₂ f₃: TraceSet σ) :
-    (f₁.and f₂).until f₃ = (f₁.until f₃).and (f₂.until f₃) := by
+lemma and_until_distrib : (f₁.and f₂).until f₃ = (f₁.until f₃).and (f₂.until f₃) := by
   ext t
   simp only [push_fltl]
   constructor
@@ -299,10 +328,16 @@ lemma and_until_distrib (f₁ f₂ f₃: TraceSet σ) :
       have : i < n := by linarith
       simp_all
 
-lemma finally_or_distrib (f₁ f₂ : TraceSet σ) : (f₁.or f₂).finally = f₁.finally.or f₂.finally := by
+lemma release_and_distrib : f₁.release (f₂.and f₃) = (f₁.release f₂).and (f₁.release f₃) := by
+  simp [TraceSet.release, not_or, not_and, until_or_distrib]
+
+lemma or_release_distrib : (f₁.or f₂).release f₃ = (f₁.release f₃).or (f₂.release f₃) := by
+  simp [TraceSet.release, not_or, not_and, and_until_distrib]
+
+lemma finally_or_distrib : (f₁.or f₂).finally = f₁.finally.or f₂.finally := by
   ext t; simp [push_fltl, exists_or]
 
-lemma globally_and_distrib (f₁ f₂ : TraceSet σ) : (f₁.and f₂).globally = f₁.globally.and f₂.globally := by
+lemma globally_and_distrib : (f₁.and f₂).globally = f₁.globally.and f₂.globally := by
   ext t; simp [push_fltl, forall_and]
 
 /-!
@@ -345,6 +380,12 @@ theorem until_eq_or_and :
         cases i with
         | zero => simp [h1]
         | succ n => simp; apply h3; omega
+
+theorem release_eq_and_or :
+    f₁.release f₂ = f₂.and (f₁.or (f₁.release f₂).wnext) := by
+  conv_lhs =>
+    rw [release_eq_not_until_not, until_eq_or_and]
+    simp only [not_or, not_not, not_and, not_sshift, not_until]
 
 theorem finally_eq_or_finally : f.finally = f.or f.finally.snext := by
   conv =>
