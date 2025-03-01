@@ -1,3 +1,4 @@
+import LeanLTL.Trace.Basic
 import LeanLTL.TraceSet.Defs
 import LeanLTL.Util.SimpAttrs
 import Mathlib
@@ -54,15 +55,82 @@ protected def ext {f g : TraceSet σ} (h : ∀ t, (t ⊨ f) ↔ (t ⊨ g)) : f =
 @[push_fltl] theorem sem_imp_iff : (f₁ ⇒ f₂) ↔ ∀ (t : Trace σ), t ⊨ f₁.imp f₂ := by
   simp [TraceSet.sem_imp, push_fltl]
 
+lemma le_of_sat_sshift {n : ℕ} (h : t ⊨ f.sshift n) : n < t.length := by
+  rw [sat_sshift_iff] at h
+  exact h.1
+
+lemma singleton_sat_wshift {s : σ} (c : ℕ) :
+    (Trace.singleton s ⊨ f.wshift c) ↔ 0 < c ∨ (c = 0 ∧ Trace.singleton s ⊨ f) := by
+  obtain h | h := Nat.eq_zero_or_pos c <;> simp [push_fltl, h]
+  intro
+  omega
+
+/-!
+### Adjunctions
+-/
+
+lemma shift_sat_iff_sat_sshift {n : ℕ} (h : n < t.length) : (t.shift n h ⊨ f) ↔ (t ⊨ f.sshift n) := by
+  constructor <;> simp [push_fltl, h]
+
+lemma shift_sat_iff_sat_wshift {n : ℕ} (h : n < t.length) : (t.shift n h ⊨ f) ↔ (t ⊨ f.wshift n) := by
+  constructor <;> simp [push_fltl, h]
+
+/-!
+### General lemmas
+-/
+
+@[simp] lemma sshift_zero : f.sshift 0 = f := by ext t; simp [push_fltl]
+
+@[simp] lemma wshift_zero : f.wshift 0 = f := by ext t; simp [push_fltl]
+
+lemma sat_wshift_of_sat_sshift (c : ℕ) (h : t ⊨ f.sshift c) : t ⊨ f.wshift c := by
+  rw [sat_wshift_iff]
+  intro
+  rw [sat_sshift_iff] at h
+  obtain ⟨_, hs⟩ := h
+  exact hs
+
+@[simp] lemma sshift_sshift (n₁ n₂ : ℕ) : (f.sshift n₁).sshift n₂ = f.sshift (n₁ + n₂) := by
+  ext t
+  simp only [push_fltl]
+  simp only [Trace.shift_shift, Trace.shift_length, Nat.cast_add, lt_tsub_iff_left]
+  constructor
+  · rintro ⟨h₂, h₁, h⟩
+    use (by rwa [add_comm])
+  · rintro ⟨h, ht⟩
+    refine ⟨?_, (by rwa [add_comm]), ht⟩
+    clear ht
+    revert h
+    cases t.length
+    · simp
+    · norm_cast; omega
+
+@[simp] lemma wshift_wshift (n₁ n₂ : ℕ) : (f.wshift n₁).wshift n₂ = f.wshift (n₂ + n₁) := by
+  ext t
+  simp only [push_fltl]
+  simp only [Trace.shift_length, Trace.shift_shift, Nat.cast_add, add_comm, lt_tsub_iff_right]
+  constructor
+  · intro h hl
+    refine h ?_ hl
+    revert hl
+    cases t.length
+    · simp
+    · norm_cast; omega
+  · intro h _ hl
+    exact h hl
+
+@[simp] lemma true_and : TraceSet.true.and f = f := by ext t; simp [push_fltl]
+@[simp] lemma and_true : f.and TraceSet.true = f := by ext t; simp [push_fltl]
+
 /-!
 ### Negation pushing
 -/
 
 @[simp] lemma not_not : f.not.not = f := by ext t; simp [push_fltl]
 
-lemma not_wshift (n : ℕ) : (f.sshift n).not = f.not.wshift n := by ext t; simp [push_fltl]
+lemma not_sshift (n : ℕ) : (f.sshift n).not = f.not.wshift n := by ext t; simp [push_fltl]
 
-lemma not_sshift (n : ℕ) : (f.wshift n).not = f.not.sshift n := by ext t; simp [push_fltl]
+lemma not_wshift (n : ℕ) : (f.wshift n).not = f.not.sshift n := by ext t; simp [push_fltl]
 
 lemma not_finally : f.finally.not = f.not.globally := by ext t; simp [push_fltl]
 
@@ -112,12 +180,12 @@ lemma until_and_distrib (f₁ f₂ f₃: TraceSet σ) :
   . rintro ⟨⟨n, ⟨h₁, ⟨h_t_n, h₂⟩⟩⟩, ⟨j,⟨h₃,⟨h_t_j,h₄⟩⟩⟩⟩
     by_cases h₅: n < j
     . use n
-      simp_all only [true_and, exists_const, and_true]
+      simp_all only [_root_.true_and, exists_const, _root_.and_true]
       intro i h₅ h_t_i
       have : i < j := by linarith
       simp_all
     . use j
-      simp_all only [true_and, exists_const, and_true]
+      simp_all only [not_lt, _root_.and_true, exists_const]
       intro i h₅ h_t_i
       have : i < n := by linarith
       simp_all
@@ -131,6 +199,66 @@ lemma globally_and_distrib (f₁ f₂ : TraceSet σ) : (f₁.and f₂).globally 
 -- TODO: Figure out FLTL equivalent for the following
 -- lemma shift_distribute_until (n : ℕ) : (f₁.until f₂).shift n = ((f₁.shift n).until (f₂.shift n)) := by sorry
 
+/-!
+### Temporal unfolding
+-/
+
+theorem until_eq_or_and :
+    f₁.until f₂ = f₂.or (f₁.and (f₁.until f₂).snext) := by
+  ext t
+  cases t using Trace.unshift_cases with
+  | singleton =>
+    simp [push_fltl]
+    constructor
+    · rintro ⟨_, _, rfl, h⟩
+      exact h
+    · intro h
+      use 0
+      simp [h]
+  | unshift s t =>
+    simp [push_fltl]
+    constructor
+    · rintro ⟨n, h1, h2, h3⟩
+      cases n with
+      | zero => simp at h3; simp [h3]
+      | succ n =>
+        right
+        simp [Trace.shift_unshift_succ] at h3
+        have h1' := h1 0 (by simp) (by simp)
+        rw [Trace.shift_zero] at h1'
+        refine ⟨h1', ?_, ?_⟩
+        · have := t.nempty
+          revert this
+          cases t.length
+          · intro; apply ENat.coe_lt_top
+          · norm_cast; omega
+        use n
+        constructor
+        · intro i hi ht
+          have := h1 (i + 1) (by omega) (by simp [ht])
+          simpa using this
+        · simp at h2
+          simp [h3, h2]
+    · rintro (h | ⟨h1, h2, n, h3, h4, h5⟩)
+      · use 0
+        simp [h]
+      · use (n + 1)
+        simp [h5, h4]
+        intro i h6 h7
+        cases i with
+        | zero => simp [h1]
+        | succ n => simp; apply h3; omega
+
+theorem finally_eq_or_finally : f.finally = f.or f.finally.snext := by
+  conv =>
+    enter [1]
+    rw [TraceSet.finally, until_eq_or_and, ← TraceSet.finally, TraceSet.true_and]
+
+theorem globally_eq_and_globally : f.globally = f.and f.globally.wnext := by
+  conv =>
+    enter [1]
+    rw [TraceSet.globally, finally_eq_or_finally]
+    simp [TraceSet.not_or, TraceSet.not_sshift, TraceSet.not_finally]
 
 /-!
 ### Theorems about `TraceSet.toFun`

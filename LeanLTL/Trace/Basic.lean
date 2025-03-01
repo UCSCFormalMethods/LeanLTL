@@ -89,16 +89,26 @@ lemma exists_unshift (t : Trace σ) (h1 : 1 < t.length) :
       omega
   · cases i <;> rfl
 
-@[simp] lemma shift_0 (t : Trace σ) : t.shift 0 t.nempty = t := by simp [Trace.shift]
+@[simp] lemma shift_zero (t : Trace σ) : t.shift 0 t.nempty = t := by simp [Trace.shift]
 
-@[simp] lemma shift_unshift (s : σ) (t : Trace σ) :
-    (Trace.unshift s t).shift 1 (one_lt_unshift_length _ _) = t := by
+@[simp] lemma shift_singleton_eq (s : σ) (i : ℕ) (h : i < (Trace.singleton s).length) :
+    (Trace.singleton s).shift i h = Trace.singleton s := by
+  simp only [singleton_length, Nat.cast_lt_one] at h
+  cases h
+  simp
+
+@[simp] lemma shift_unshift_succ (s : σ) (t : Trace σ) {n : ℕ} (h : (n + 1 : ℕ) < (Trace.unshift s t).length) :
+    (Trace.unshift s t).shift (n + 1) h = t.shift n (by simpa using h) := by
   ext
-  · simp
+  · revert h
+    simp
     cases t.length
-    · simp
-    · rfl
+    · simp; change ¬ (n + 1 : ℕ) = (⊤ : ℕ∞); apply ENat.coe_ne_top
+    · norm_cast; omega
   · rfl
+
+lemma shift_unshift_one (s : σ) (t : Trace σ) :
+    (Trace.unshift s t).shift 1 (one_lt_unshift_length _ _) = t := by simp
 
 @[simp] lemma not_finite {t : Trace σ} : ¬ t.Finite ↔ t.Infinite := by
   unfold Trace.Finite Trace.Infinite
@@ -162,8 +172,28 @@ theorem unshift_induction {p : (t : Trace σ) → t.Finite → Prop}
           norm_cast at *
           omega
 
+@[elab_as_elim]
+theorem unshift_cases {p : (t : Trace σ) → Prop}
+    (singleton : ∀ s : σ, p (Trace.singleton s))
+    (unshift : ∀ (s : σ) (t : Trace σ), p (t.unshift s))
+    (t : Trace σ) : p t := by
+  generalize hl : t.length = n
+  cases n with
+  | top =>
+    obtain ⟨_, _, rfl⟩ := exists_unshift t (by simp [hl]; apply ENat.coe_lt_top)
+    apply unshift
+  | coe n =>
+    obtain _ | _ | n := n
+    · have := t.nempty
+      simp [hl] at this
+    · simp only [zero_add, Nat.cast_one] at hl
+      obtain ⟨_, rfl⟩ := exists_singleton t hl
+      apply singleton
+    · obtain ⟨_, _, rfl⟩ := exists_unshift t (by rw [hl]; norm_cast; omega)
+      apply unshift
+
 private lemma shift_shift_aux {t : Trace σ} {m n : ℕ}
-    (h₁ : m < t.length) (h₂ : n < (t.shift m h₁).length) : ↑(m + n) < t.length := by
+    (h₁ : m < t.length) (h₂ : n < (t.shift m h₁).length) : ↑(n + m) < t.length := by
   rw [shift_length] at h₂
   generalize t.length = k at *
   induction k
@@ -172,14 +202,12 @@ private lemma shift_shift_aux {t : Trace σ} {m n : ℕ}
     omega
 
 lemma toFun_shift (t : Trace σ) (i j : ℕ) (h) (h') :
-    (t.shift i h).toFun j h' = t.toFun (i + j) (shift_shift_aux h h') := by
-  conv => enter [2,2]; rw [Nat.add_comm]
-  rfl -- (!)
+    (t.shift i h).toFun j h' = t.toFun (j + i) (shift_shift_aux h h') := rfl -- (!)
 
 @[simp]
 theorem shift_shift (t : Trace σ) (m n : ℕ)
     (h₁ : m < t.length) (h₂ : n < (t.shift m h₁).length) :
-    ((t.shift m h₁).shift n h₂) = t.shift (m + n) (shift_shift_aux h₁ h₂) := by
+    ((t.shift m h₁).shift n h₂) = t.shift (n + m) (shift_shift_aux h₁ h₂) := by
   ext i
   . simp
     cases t.length
