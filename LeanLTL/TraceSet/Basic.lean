@@ -108,24 +108,31 @@ lemma shift_sat_iff_sat_wshift {n : ℕ} (h : n < t.length) : (t.shift n h ⊨ f
 ### Negation pushing
 -/
 
-@[simp] lemma not_not : f.not.not = f := by ext t; simp [push_fltl]
+@[simp, push_not_fltl, neg_norm_fltl] lemma not_not : f.not.not = f := by ext t; simp [push_fltl]
 
+@[push_not_fltl, neg_norm_fltl]
 lemma not_sshift (n : ℕ) : (f.sshift n).not = f.not.wshift n := by ext t; simp [push_fltl]
 
+@[push_not_fltl, neg_norm_fltl]
 lemma not_wshift (n : ℕ) : (f.wshift n).not = f.not.sshift n := by ext t; simp [push_fltl]
 
-lemma not_finally : f.finally.not = f.not.globally := by ext t; simp [push_fltl]
+@[push_not_fltl] lemma not_finally : f.finally.not = f.not.globally := by ext t; simp [push_fltl]
 
-lemma not_globally : f.globally.not = f.not.finally := by ext t; simp [push_fltl]
+@[push_not_fltl] lemma not_globally : f.globally.not = f.not.finally := by ext t; simp [push_fltl]
 
+@[push_not_fltl, neg_norm_fltl]
 lemma not_and : (f₁.and f₂).not = f₁.not.or f₂.not := by ext t; simp [push_fltl, imp_iff_not_or]
 
+@[push_not_fltl, neg_norm_fltl]
 lemma not_or : (f₁.or f₂).not = f₁.not.and f₂.not := by ext t; simp [push_fltl]
 
+@[push_not_fltl, neg_norm_fltl]
 lemma not_until : (f₁.until f₂).not = f₁.not.release f₂.not := by simp [TraceSet.release]
 
+@[push_not_fltl, neg_norm_fltl]
 lemma not_release : (f₁.release f₂).not = f₁.not.until f₂.not := by simp [TraceSet.release]
 
+@[simp, neg_norm_fltl]
 lemma not_inj_iff : f₁.not = f₂.not ↔ f₁ = f₂ := by
   constructor
   · intro h
@@ -136,6 +143,9 @@ lemma not_inj_iff : f₁.not = f₂.not ↔ f₁ = f₂ := by
 /-!
 ### General lemmas
 -/
+
+@[neg_norm_fltl]
+lemma imp_eq_not_or : f₁.imp f₂ = f₁.not.or f₂ := by ext t; simp [push_fltl, imp_iff_not_or]
 
 @[simp] lemma sshift_zero : f.sshift 0 = f := by ext t; simp [push_fltl]
 
@@ -177,6 +187,16 @@ lemma sat_wshift_of_sat_sshift (c : ℕ) (h : t ⊨ f.sshift c) : t ⊨ f.wshift
   · intro h _ hl
     exact h hl
 
+-- TODO: are there sshift_wshift or wshift_sshift lemmas?
+
+@[simp, push_not_fltl, neg_norm_fltl]
+lemma not_true : TraceSet.true.not = (TraceSet.false : TraceSet σ) := by
+  ext t; simp [push_fltl]
+
+@[simp, push_not_fltl, neg_norm_fltl]
+lemma not_false : TraceSet.false.not = (TraceSet.true : TraceSet σ) := by
+  ext t; simp [push_fltl]
+
 @[simp] lemma true_and : TraceSet.true.and f = f := by ext t; simp [push_fltl]
 
 @[simp] lemma and_true : f.and TraceSet.true = f := by ext t; simp [push_fltl]
@@ -193,6 +213,14 @@ lemma sat_wshift_of_sat_sshift (c : ℕ) (h : t ⊨ f.sshift c) : t ⊨ f.wshift
 
 @[simp] lemma or_true : f.or TraceSet.true = TraceSet.true := by ext t; simp [push_fltl]
 
+@[simp]
+lemma wshift_true (n : ℕ) : TraceSet.true.wshift n = (TraceSet.true : TraceSet σ) := by
+  ext t; simp [push_fltl]
+
+@[simp]
+lemma sshift_false (n : ℕ) : TraceSet.false.sshift n = (TraceSet.false : TraceSet σ) := by
+  ext t; simp [push_fltl]
+
 lemma release_eq_not_until_not : f₁.release f₂ = (f₁.not.until f₂.not).not := rfl
 
 lemma until_eq_not_release_not : f₁.until f₂ = (f₁.not.release f₂.not).not := by
@@ -203,6 +231,77 @@ lemma finally_eq_not_globally_not : f.finally = f.not.globally.not := by
 
 lemma globally_eq_not_finally_not : f.globally = f.not.finally.not := by
   simp [not_finally]
+
+lemma true_until : TraceSet.true.until f = f.finally := rfl
+
+@[simp]
+lemma false_until : TraceSet.false.until f = f := by
+  ext t
+  simp only [push_fltl]
+  simp only [imp_false, not_lt]
+  constructor
+  · rintro ⟨n, h1, h2, h4⟩
+    cases n
+    · simpa using h4
+    · specialize h1 0 (by simp)
+      have := lt_of_lt_of_le t.nempty h1
+      simp at this
+  · intro h
+    use 0
+    simp [h]
+
+@[simp, neg_norm_fltl]
+lemma until_true : f.until TraceSet.true = TraceSet.true := by
+  ext t
+  simp only [push_fltl, iff_true]
+  use 0
+  simp
+
+@[simp, neg_norm_fltl]
+lemma until_false : f.until TraceSet.false = TraceSet.false := by
+  ext t; simp [push_fltl, iff_false]
+
+lemma false_release : TraceSet.false.release f = f.globally := by
+  rw [globally_eq_not_finally_not, ← true_until]
+  simp [push_not_fltl]
+
+@[simp]
+lemma true_release : TraceSet.true.release f = f := by
+  rw [release_eq_not_until_not, not_true, false_until, not_not]
+
+@[simp, neg_norm_fltl]
+lemma release_true : f.release TraceSet.true = TraceSet.true := by
+  rw [release_eq_not_until_not]
+  simp
+
+@[simp, neg_norm_fltl]
+lemma release_false : f.release TraceSet.false = TraceSet.false := by
+  rw [release_eq_not_until_not]
+  simp
+
+@[neg_norm_fltl]
+lemma finally_eq_true_until : f.finally = TraceSet.true.until f := rfl
+
+@[neg_norm_fltl]
+lemma globally_eq_false_release : f.globally = TraceSet.false.release f := by
+  rw [globally_eq_not_finally_not, finally_eq_true_until]
+  simp [push_not_fltl]
+
+@[simp]
+lemma globally_true : TraceSet.true.globally = (TraceSet.true : TraceSet σ) := by
+  simp [globally_eq_false_release]
+
+@[simp]
+lemma globally_false : TraceSet.false.globally = (TraceSet.false : TraceSet σ) := by
+  simp [globally_eq_false_release]
+
+@[simp]
+lemma finally_true : TraceSet.true.finally = (TraceSet.true : TraceSet σ) := by
+  simp [finally_eq_true_until]
+
+@[simp]
+lemma finally_false : TraceSet.false.finally = (TraceSet.false : TraceSet σ) := by
+  simp [finally_eq_true_until]
 
 lemma sshift_until (n : ℕ) : (f₁.until f₂).sshift n = (f₁.sshift n).until (f₂.sshift n) := by
   ext t
@@ -385,18 +484,16 @@ theorem release_eq_and_or :
     f₁.release f₂ = f₂.and (f₁.or (f₁.release f₂).wnext) := by
   conv_lhs =>
     rw [release_eq_not_until_not, until_eq_or_and]
-    simp only [not_or, not_not, not_and, not_sshift, not_until]
+    simp only [push_not_fltl]
 
 theorem finally_eq_or_finally : f.finally = f.or f.finally.snext := by
-  conv =>
-    enter [1]
+  conv_lhs =>
     rw [TraceSet.finally, until_eq_or_and, ← TraceSet.finally, TraceSet.true_and]
 
 theorem globally_eq_and_globally : f.globally = f.and f.globally.wnext := by
-  conv =>
-    enter [1]
+  conv_lhs =>
     rw [TraceSet.globally, finally_eq_or_finally]
-    simp [TraceSet.not_or, TraceSet.not_sshift, TraceSet.not_finally]
+    simp [push_not_fltl]
 
 /-!
 ### More semantics lemmas
