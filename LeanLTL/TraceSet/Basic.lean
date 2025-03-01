@@ -210,6 +210,10 @@ lemma sshift_until (n : ℕ) : (f₁.until f₂).sshift n = (f₁.sshift n).unti
     · use (by exact lt_tsub_iff_left.mpr h2)
       simpa only [add_comm] using h3
 
+-- TODO: Does this hold too?
+-- lemma wshift_until (n : ℕ) : (f₁.until f₂).wshift n = (f₁.wshift n).until (f₂.wshift n) := by
+--   sorry
+
 @[simp] theorem until_until : f₁.until (f₁.until f₂) = (f₁.until f₂) := by
   ext t
   constructor
@@ -295,9 +299,6 @@ lemma finally_or_distrib (f₁ f₂ : TraceSet σ) : (f₁.or f₂).finally = f�
 
 lemma globally_and_distrib (f₁ f₂ : TraceSet σ) : (f₁.and f₂).globally = f₁.globally.and f₂.globally := by
   ext t; simp [push_fltl, forall_and]
-
--- TODO: Figure out FLTL equivalent for the following
--- lemma shift_distribute_until (n : ℕ) : (f₁.until f₂).shift n = ((f₁.shift n).until (f₂.shift n)) := by sorry
 
 /-!
 ### Temporal unfolding
