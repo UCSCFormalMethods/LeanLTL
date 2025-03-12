@@ -11,16 +11,19 @@ structure Trace (σ: Type*) where
 
 attribute [simp] Trace.finite
 
+-- TODO: Function and pred type
+-- TODO: Add value type restriction
+
 inductive Sigma_Term (σ: Type*) where
   | var (v: Var σ)
   | quantified_var (v: σ)
   | const (v: σ)
-  | function (f: Type* → σ)
+  | apply {n: ℕ} (f: (Fin n → σ) → σ) (args: Fin n → Sigma_Term σ)
   | snext (s: Sigma_Term σ)
   | wnext (s: Sigma_Term σ)
 
 inductive Formula (σ: Type*) where
-  | var (v: Var σ)
+  | pred {n: ℕ} (p: (Fin n → σ) → Prop) (args: Fin n → Sigma_Term σ)
   | not (f: Formula σ)
   | and (f₁ f₂: Formula σ)
   | next (f: Formula σ)
