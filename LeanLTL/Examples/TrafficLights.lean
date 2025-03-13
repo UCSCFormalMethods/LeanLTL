@@ -1,5 +1,5 @@
 import LeanLTL
-
+open scoped LeanLTL.Notation
 -- TODO: Some sort of element, possible optional, that makes this more interesting and undecidable? Right now this could be solved
 --       by LTL MT
 -- TODO: Support naturals/integers instead of rationals
@@ -15,6 +15,7 @@ structure ExState where
   TL1Green: Prop
   TL2Red: Prop
   TL2Green: Prop
+
   TL1Arrives : ℚ
   TL1Departs : ℚ
   TL2Arrives : ℚ
@@ -22,10 +23,10 @@ structure ExState where
   TL1Queue : ℚ
   TL2Queue : ℚ
 
-abbrev TL1Green := LeanLTL.TraceFun.of ExState.TL1Green
-abbrev TL1Red := LeanLTL.TraceFun.of ExState.TL1Red
-abbrev TL2Green := LeanLTL.TraceFun.of ExState.TL2Green
-abbrev TL2Red := LeanLTL.TraceFun.of ExState.TL2Red
+abbrev TL1Green := LeanLTL.TraceSet.of ExState.TL1Green
+abbrev TL1Red := LeanLTL.TraceSet.of ExState.TL1Red
+abbrev TL2Green := LeanLTL.TraceSet.of ExState.TL2Green
+abbrev TL2Red := LeanLTL.TraceSet.of ExState.TL2Red
 abbrev TL1Arrives := LeanLTL.TraceFun.of ExState.TL1Arrives
 abbrev TL1Departs := LeanLTL.TraceFun.of ExState.TL1Departs
 abbrev TL2Arrives := LeanLTL.TraceFun.of ExState.TL2Arrives
@@ -41,8 +42,8 @@ abbrev max_departs : LeanLTL.TraceFun ExState ℚ := LLTL[1]
 abbrev TL1GreenRedIff  := LLTL[G (TL1Green ↔ (¬TL1Red))]
 abbrev TL2GreenRedIff  := LLTL[G (TL2Green ↔ (¬TL2Red))]
 
-abbrev TL1GreenNext     := LLTL[G ((TL1Green ∧ TL1Queue == 0) → (X (TL1Red ∧ TL2Green)))]
-abbrev TL2GreenNext     := LLTL[G ((TL2Green ∧ TL2Queue == 0) → (X (TL2Red ∧ TL1Green)))]
+abbrev TL1GreenNext     := LLTL[G ((TL1Green ∧ (TL1Queue == 0)) → (Xʷ (TL1Red ∧ TL2Green)))]
+abbrev TL2GreenNext     := LLTL[G ((TL2Green ∧ (TL2Queue == 0)) → (Xʷ (TL2Red ∧ TL1Green)))]
 
 abbrev TL1GreenDeparts  := LLTL[G (TL1Green → (TL1Departs == max_departs))]
 abbrev TL1RedDeparts    := LLTL[G (TL1Red → (TL1Departs == 0))]
@@ -55,9 +56,9 @@ abbrev TL2ArrivesBounds := LLTL[G (0 ≤ TL2Arrives ∧ TL2Arrives ≤ max_arriv
 abbrev TL1QueueNext     := LLTL[G ((X TL1Queue) == TL1Queue + TL1Arrives - TL1Departs)]
 abbrev TL2QueueNext     := LLTL[G ((X TL2Queue) == TL2Queue + TL2Arrives - TL2Departs)]
 
-abbrev TLBaseProperties :=  TL1GreenRedIff ∧ TL2GreenRedIff ∧ TL1GreenNext ∧ TL2GreenNext
+abbrev TLBaseProperties := LLTL[TL1GreenRedIff ∧ TL2GreenRedIff ∧ TL1GreenNext ∧ TL2GreenNext
                             ∧ TL1GreenDeparts ∧ TL1RedDeparts ∧ TL2GreenDeparts ∧ TL2RedDeparts
-                            ∧ TL1ArrivesBounds ∧ TL2ArrivesBounds ∧ TL1QueueNext ∧ TL2QueueNext
+                            ∧ TL1ArrivesBounds ∧ TL2ArrivesBounds ∧ TL1QueueNext ∧ TL2QueueNext]
 
 
 -- Optional Properties

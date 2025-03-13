@@ -64,6 +64,12 @@ protected def TraceSet.not (f : TraceSet σ) : TraceSet σ := TraceSet.map (¬ �
 protected def TraceSet.and (f₁ f₂ : TraceSet σ) : TraceSet σ := TraceSet.map₂ (· ∧ ·) f₁ f₂
 protected def TraceSet.or (f₁ f₂ : TraceSet σ) : TraceSet σ := TraceSet.map₂ (· ∨ ·) f₁ f₂
 protected def TraceSet.imp (f₁ f₂ : TraceSet σ) : TraceSet σ := TraceSet.map₂ (· → ·) f₁ f₂
+protected def TraceSet.iff (f₁ f₂ : TraceSet σ) : TraceSet σ := TraceSet.map₂ (· ↔ ·) f₁ f₂
+
+protected def TraceSet.exists (p : α → TraceSet σ) : TraceSet σ where
+  sat t := ∃ x, (t ⊨ p x)
+protected def TraceSet.forall (p : α → TraceSet σ) : TraceSet σ where
+  sat t := ∀ x, (t ⊨ p x)
 
 /-!
 #### Temporal operators

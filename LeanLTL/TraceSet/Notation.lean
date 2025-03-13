@@ -1,4 +1,8 @@
 import LeanLTL.TraceSet.Defs
+import LeanLTL.TraceFun.Defs
+import LeanLTL.TraceFun.Operations
+
+import Mathlib
 
 /-!
 # LTL notation
@@ -46,45 +50,46 @@ scoped prefix:40 "F " => TraceSet.finally
 True if every weak shift is true. -/
 scoped prefix:40 "G " => TraceSet.globally
 
--- scoped syntax "FLTL[" term "]" : term
+scoped syntax "LLTL[" term "]" : term
 
--- macro_rules
---   -- Num -> Num Operators
---   | `(FLTL[$x - $y])       => `(TraceFun.sub FLTL[$x] FLTL[$y])
---   | `(FLTL[$x + $y])       => `(TraceFun.add FLTL[$x] FLTL[$y])
---   | `(FLTL[$x / $y])       => `(TraceFun.div FLTL[$x] FLTL[$y])
---   | `(FLTL[$x * $y])       => `(TraceFun.mul FLTL[$x] FLTL[$y])
---   | `(FLTL[- $x])          => `(TraceFun.neg FLTL[$x])
---   | `(FLTL[⌈$x⌉])          => `(TraceFun.ceil FLTL[$x])
---   -- Num -> Prop Operators
---   | `(FLTL[$x == $y])      => `(TraceFun.eq FLTL[$x] FLTL[$y])
---   | `(FLTL[$x < $y])       => `(TraceFun.lt FLTL[$x] FLTL[$y])
---   | `(FLTL[$x > $y])       => `(TraceFun.gt FLTL[$x] FLTL[$y])
---   | `(FLTL[$x ≤ $y])       => `(TraceFun.leq FLTL[$x] FLTL[$y])
---   | `(FLTL[$x ≥ $y])       => `(TraceFun.geq FLTL[$x] FLTL[$y])
---   | `(FLTL[$x ⊓ $y])       => `(TraceFun.min FLTL[$x] FLTL[$y])
---   | `(FLTL[$x ⊔ $y])       => `(TraceFun.max FLTL[$x] FLTL[$y])
---   -- Boolean -> Boolean Operators
---   | `(FLTL[$x → $y])       => `(TraceSet.imp FLTL[$x] FLTL[$y])
---   | `(FLTL[$x ∧ $y])       => `(TraceSet.and FLTL[$x] FLTL[$y])
---   | `(FLTL[$x ∨ $y])       => `(TraceSet.or FLTL[$x] FLTL[$y])
---   | `(FLTL[¬$x])           => `(TraceSet.not FLTL[$x])
---   -- General Temporal Operators
---   | `(FLTL[Xˢ $x])         => `(TraceSet.snext FLTL[$x])
---   | `(FLTL[Xʷ $x])         => `(TraceSet.wnext FLTL[$x])
---   | `(FLTL[X $x])          => `(TraceFun.next FLTL[$x])
---   -- Prop Temporal Operators
---   | `(FLTL[F $x])          => `(TraceSet.finally FLTL[$x])
---   | `(FLTL[G $x])          => `(TraceSet.globally FLTL[$x])
---   | `(FLTL[$x U $y])       => `(TraceSet.until FLTL[$x] FLTL[$y])
---   -- | `(FLTL[$x R $y])       => `(TraceSet.release FLTL[$x] FLTL[$y])
---   -- Parentheses, Constants, and Base Cases
---   | `(FLTL[($x)])          => `(FLTL[$x])
---   | `(FLTL[⊤])             => `(TraceSet.true)
---   | `(FLTL[⊥])             => `(TraceSet.false)
---   | `(FLTL[$x:scientific]) => `(TraceFun.const $x)
---   | `(FLTL[$x:num])        => `(TraceFun.const $x)
---   | `(FLTL[$x])            => return x
+macro_rules
+  -- Num -> Num Operators
+  | `(LLTL[$x - $y])       => `(TraceFun.sub LLTL[$x] LLTL[$y])
+  | `(LLTL[$x + $y])       => `(TraceFun.add LLTL[$x] LLTL[$y])
+  | `(LLTL[$x / $y])       => `(TraceFun.div LLTL[$x] LLTL[$y])
+  | `(LLTL[$x * $y])       => `(TraceFun.mul LLTL[$x] LLTL[$y])
+  | `(LLTL[- $x])          => `(TraceFun.neg LLTL[$x])
+  | `(LLTL[⌈$x⌉])          => `(TraceFun.ceil LLTL[$x])
+  -- Num -> Prop Operators
+  | `(LLTL[$x == $y])      => `(TraceFun.eq LLTL[$x] LLTL[$y])
+  | `(LLTL[$x < $y])       => `(TraceFun.lt LLTL[$x] LLTL[$y])
+  | `(LLTL[$x > $y])       => `(TraceFun.gt LLTL[$x] LLTL[$y])
+  | `(LLTL[$x ≤ $y])       => `(TraceFun.leq LLTL[$x] LLTL[$y])
+  | `(LLTL[$x ≥ $y])       => `(TraceFun.geq LLTL[$x] LLTL[$y])
+  | `(LLTL[$x ⊓ $y])       => `(TraceFun.min LLTL[$x] LLTL[$y])
+  | `(LLTL[$x ⊔ $y])       => `(TraceFun.max LLTL[$x] LLTL[$y])
+  -- Boolean -> Boolean Operators
+  | `(LLTL[$x → $y])       => `(TraceSet.imp LLTL[$x] LLTL[$y])
+  | `(LLTL[$x ↔ $y])       => `(TraceSet.iff LLTL[$x] LLTL[$y])
+  | `(LLTL[$x ∧ $y])       => `(TraceSet.and LLTL[$x] LLTL[$y])
+  | `(LLTL[$x ∨ $y])       => `(TraceSet.or LLTL[$x] LLTL[$y])
+  | `(LLTL[¬$x])           => `(TraceSet.not LLTL[$x])
+  -- General Temporal Operators
+  | `(LLTL[Xˢ $x])         => `(TraceSet.snext LLTL[$x])
+  | `(LLTL[Xʷ $x])         => `(TraceSet.wnext LLTL[$x])
+  | `(LLTL[X $x])          => `(TraceFun.next LLTL[$x])
+  -- Prop Temporal Operators
+  | `(LLTL[F $x])          => `(TraceSet.finally LLTL[$x])
+  | `(LLTL[G $x])          => `(TraceSet.globally LLTL[$x])
+  | `(LLTL[$x U $y])       => `(TraceSet.until LLTL[$x] LLTL[$y])
+  | `(LLTL[$x R $y])       => `(TraceSet.release LLTL[$x] LLTL[$y])
+  -- Parentheses, Constants, and Base Cases
+  | `(LLTL[($x)])          => `(LLTL[$x])
+  | `(LLTL[⊤])             => `(TraceSet.true)
+  | `(LLTL[⊥])             => `(TraceSet.false)
+  | `(LLTL[$x:scientific]) => `(TraceFun.const $x)
+  | `(LLTL[$x:num])        => `(TraceFun.const $x)
+  | `(LLTL[$x])            => return x
 
 
 end Notation

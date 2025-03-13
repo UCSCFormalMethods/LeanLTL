@@ -33,6 +33,12 @@ protected def ext {f g : TraceSet σ} (h : ∀ t, (t ⊨ f) ↔ (t ⊨ g)) : f =
 @[push_fltl] lemma sat_and_iff : (t ⊨ f₁.and f₂) ↔ (t ⊨ f₁) ∧ (t ⊨ f₂) := Iff.rfl
 @[push_fltl] lemma sat_or_iff : (t ⊨ f₁.or f₂) ↔ (t ⊨ f₁) ∨ (t ⊨ f₂) := Iff.rfl
 @[push_fltl] lemma sat_imp_iff : (t ⊨ f₁.imp f₂) ↔ ((t ⊨ f₁) → (t ⊨ f₂)) := Iff.rfl
+@[push_fltl] lemma sat_iff_iff : (t ⊨ f₁.iff f₂) ↔ ((t ⊨ f₁) ↔ (t ⊨ f₂)) := Iff.rfl
+
+@[push_fltl] theorem sat_forall_iff (p : α → TraceSet σ) :
+  (t ⊨ (TraceSet.forall p)) ↔ (∀ x, t ⊨ p x) := by rfl
+@[push_fltl] theorem sat_exists_iff (p : α → TraceSet σ) :
+  (t ⊨ (TraceSet.exists p)) ↔ (∃ x, t ⊨ p x) := by rfl
 
 @[push_fltl] lemma sat_wshift_iff (c : ℕ) :
     (t ⊨ f.wshift c) ↔ ∀ h : c < t.length, t.shift c h ⊨ f := Iff.rfl
