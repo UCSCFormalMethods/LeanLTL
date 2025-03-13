@@ -1,4 +1,5 @@
 import LeanLTL.Trace.Defs
+import LeanLTL.TraceFun.Defs
 
 /-!
 # Sets of traces
@@ -74,6 +75,15 @@ protected def TraceSet.forall (p : α → TraceSet σ) : TraceSet σ where
 /-!
 #### Temporal operators
 -/
+
+def TraceFun.get (d: Prop) (a : TraceFun σ α) (f : α -> TraceSet σ) : TraceSet σ where
+  sat t :=
+    match a t with
+    | none => d
+    | some val => t ⊨ (f val)
+
+def TraceFun.wget (a : TraceFun σ α) (f : α -> TraceSet σ) : TraceSet σ := TraceFun.get True a f
+def TraceFun.sget (a : TraceFun σ α) (f : α -> TraceSet σ) : TraceSet σ := TraceFun.get False a f
 
 /--
 Weak shift.
