@@ -1,6 +1,6 @@
 import LeanLTL
 
-namespace LTLf
+namespace LTLfMT
 variable {σ α: Type*}
 
 -- Definitions taken from "Linear Temporal Logic Modulo Theories over Finite Traces" by Giatti et al.
@@ -10,9 +10,6 @@ structure Trace (σ: Type*) where
   finite : trace.Finite
 
 attribute [simp] Trace.finite
-
--- TODO: Function and pred type
--- TODO: Add value type restriction
 
 def FuncConst (_: ℕ) := Type*
 def FuncVal (n: ℕ) (α) := (args: Fin n → α) → α
@@ -37,12 +34,8 @@ def sigma_term_contains_snext (s: SigmaTerm σ α) : Prop :=
   | SigmaTerm.snext _               => True
   | SigmaTerm.wnext _               => False
 
-structure Alpha (n: ℕ) (σ) (α) where
-  pc : PredConst n
-  args: Fin n → (SigmaTerm σ α)
-
 inductive Lambda (σ) (α) where
-  | pred {n: ℕ} (p: Alpha n σ α)
+  | alpha {an: ℕ} (pc : PredConst an) (args: Fin an → (SigmaTerm σ α))
   | not (f: Lambda σ α)
   | or (f₁ f₂: Lambda σ α)
   | and (f₁ f₂: Lambda σ α)
@@ -59,12 +52,20 @@ inductive Phi (σ) (α) where
   | until (f₁ f₂: Phi σ α)
   | release (f₁ f₂: Phi σ α)
 
+def ofOptions {n : Nat} (f : Fin n → Option α) : Option (Fin n → α) :=
+  if h : ∀ k, (f k).isSome then
+    some <| fun k => (f k).get (h k)
+  else
+    none
+
 def eval_sigma_term (t: Trace σ) (s: SigmaTerm σ α) (fs: (n: ℕ) → FuncConst n → (FuncVal n α)) : Option α :=
   match s with
   | SigmaTerm.var v                 => some <| v (t.trace.toFun 0 (by simp))
   | SigmaTerm.qvar c                => some c
   | SigmaTerm.const c               => some c
-  | SigmaTerm.apply (n:=n) fc args  => ((fs n fc) (fun n' => eval_sigma_term t (args n') fs)) -- TODO: Option to alpha conversion?
+  | SigmaTerm.apply (n:=n) fc args  => do
+    let args' ← ofOptions (fun n' => eval_sigma_term t (args n') fs)
+    return (fs n fc) args'
   | SigmaTerm.snext s               => if h_not_last: t.trace.length > 1
                                        then
                                         let next_t : Trace σ := {
@@ -86,18 +87,15 @@ def eval_sigma_term (t: Trace σ) (s: SigmaTerm σ α) (fs: (n: ℕ) → FuncCon
 
 -- set_option autoImplicit true
 
-def sat_alpha {an} (t: Trace σ) (a: Alpha an σ α)
-  (fs: (n: ℕ) → FuncConst n → (FuncVal n α)) (ps: (n: ℕ) → PredConst n → (PredVal n α)): Prop :=
-  let args_def              := ∀ n' : Fin an, ((a.args n') t).isSome;
-  let contains_snext        := ∀ n' : Fin an, sigma_term_contains_snext (a.args n');
-  let result (d: args_def)  := ((ps an a.pc) (fun n' => eval_sigma_term t (args n') fs)); -- TODO: Option to alpha conversion?
-     contains_snext → ∃ (ad: args_def), result ad
-  ∧ ¬contains_snext → ∀ (ad: args_def), result ad
-
 def sat_lambda (t: Trace σ) (l: Lambda σ α)
   (fs: (n: ℕ) → FuncConst n → (FuncVal n α)) (ps: (n: ℕ) → PredConst n → (PredVal n α)): Prop :=
   match l with
-  | Lambda.pred a       => sat_alpha t a fs ps
+  | Lambda.alpha (an:=an) pc args =>
+      let args_def              := ∀ n', (eval_sigma_term t (args n') fs).isSome;
+      let contains_snext        := ∀ n', sigma_term_contains_snext (args n');
+      let result (d: args_def)  := ((ps an pc) (fun n' => (eval_sigma_term t (args n') fs).get (by simp_all [args_def])));
+        contains_snext → ∃ (ad: args_def), result ad
+      ∧ ¬contains_snext → ∀ (ad: args_def), result ad
   | Lambda.not f        => ¬ (sat_lambda t f fs ps)
   | Lambda.or f₁ f₂     => (sat_lambda t f₁ fs ps) ∧ (sat_lambda t f₂ fs ps)
   | Lambda.and f₁ f₂    => (sat_lambda t f₁ fs ps) ∨ (sat_lambda t f₂ fs ps)
@@ -107,49 +105,87 @@ def sat_lambda (t: Trace σ) (l: Lambda σ α)
 def sat_phi (t: Trace σ) (p: Phi σ α)
   (fs: (n: ℕ) → FuncConst n → (FuncVal n α)) (ps: (n: ℕ) → PredConst n → (PredVal n α)): Prop :=
   match p with
-  | Phi.top         => True -- TODO: Not listed in paper?
-  | Phi.lambda f    => sat_lambda t f fs ps
-  | Phi.or f₁ f₂    => (sat_phi t f₁ fs ps) ∧ (sat_phi t f₂ fs ps)
-  | Phi.and f₁ f₂   => (sat_phi t f₁ fs ps) ∨ (sat_phi t f₂ fs ps)
-  | Phi.snext f     => ∃ (h_not_last: t.trace.length > 1),
-                        let next_t : Trace σ := {
-                          trace := t.trace.shift 1 h_not_last
-                          finite := by simp
-                        }
-                        sat_phi next_t p fs ps
-  | Phi.wnext f     => ∀ (h_not_last: t.trace.length > 1),
-                        let next_t : Trace σ := {
-                          trace := t.trace.shift 1 h_not_last
-                          finite := by simp
-                        }
-                        sat_phi next_t p fs ps
+  | Phi.top           => True -- TODO: Not listed in paper?
+  | Phi.lambda f      => sat_lambda t f fs ps
+  | Phi.or f₁ f₂      => (sat_phi t f₁ fs ps) ∧ (sat_phi t f₂ fs ps)
+  | Phi.and f₁ f₂     => (sat_phi t f₁ fs ps) ∨ (sat_phi t f₂ fs ps)
+  | Phi.snext f       => ∃ (h_not_last: t.trace.length > 1),
+                          let next_t : Trace σ := {
+                            trace := t.trace.shift 1 h_not_last
+                            finite := by simp
+                          }
+                          sat_phi next_t f fs ps
+  | Phi.wnext f       => ∀ (h_not_last: t.trace.length > 1),
+                          let next_t : Trace σ := {
+                            trace := t.trace.shift 1 h_not_last
+                            finite := by simp
+                          }
+                          sat_phi next_t f fs ps
+  | Phi.until f₁ f₂ =>
+    ∃ j ≥ 0, ∃ (h_j: (j: ℕ) < t.trace.length),
+      let t_j : Trace σ := {
+        trace := (t.trace.shift j h_j)
+        finite := by simp
+      }
+      (∀ k < j, ∀ (h_k: (k: ℕ) < t.trace.length),
+      let t_k : Trace σ := {
+        trace := (t.trace.shift k h_k)
+        finite := by simp
+      }
+      (sat_phi t_k f₁ fs ps))
+      ∧ (sat_phi t_j f₂ fs ps)
+  | Phi.release f₁ f₂ =>
+    (∀ j, ∃ (h_j: (j: ℕ) < t.trace.length),
+      let t_j : Trace σ := {
+        trace := (t.trace.shift j h_j)
+        finite := by simp
+      }
+      (sat_phi t_j f₂ fs ps))
+    ∨ ∃ k ≥ 0, ∃ (h_k: (k: ℕ) < t.trace.length),
+      let t_k : Trace σ := {
+        trace := (t.trace.shift k h_k)
+        finite := by simp
+      }
+      (∀ j ≤ k, ∀ (h_j: (j: ℕ) < t.trace.length),
+      let t_j : Trace σ := {
+        trace := (t.trace.shift j h_j)
+        finite := by simp
+      }
+      (sat_phi t_j f₁ fs ps))
 
+def toLeanLTL_SigmaTerm (s: SigmaTerm σ α)
+  (fs: (n: ℕ) → FuncConst n → (FuncVal n α)) : (LeanLTL.TraceFun σ α) :=
+  match s with
+  | SigmaTerm.var v                 => sorry
+  | SigmaTerm.qvar c                => sorry
+  | SigmaTerm.const c               => sorry
+  | SigmaTerm.apply (n:=n) fc args  => sorry
+  | SigmaTerm.snext s               => sorry
+  | SigmaTerm.wnext s               => sorry
 
-def toLeanLTL {σ: Type*} (f: Formula σ) : (LeanLTL.TraceSet σ) :=
-  match f with
-  | Formula.var v        => LeanLTL.TraceSet.of v
-  | Formula.not f        => LeanLTL.TraceSet.not (toLeanLTL f)
-  | Formula.and f₁ f₂     => LeanLTL.TraceSet.and (toLeanLTL f₁) (toLeanLTL f₂)
-  | Formula.next f       => LeanLTL.TraceSet.snext (toLeanLTL f)
-  | Formula.until f₁ f₂  => LeanLTL.TraceSet.until (toLeanLTL f₁) (toLeanLTL f₂)
+def toLeanLTL_Lambda (l: Lambda σ α)
+  (fs: (n: ℕ) → FuncConst n → (FuncVal n α)) (ps: (n: ℕ) → PredConst n → (PredVal n α)) : (LeanLTL.TraceSet σ) :=
+  match l with
+  | Lambda.alpha (an:=an) pc args   => sorry
+  | Lambda.not f                    => sorry
+  | Lambda.or f₁ f₂                 => sorry
+  | Lambda.and f₁ f₂                => sorry
+  | Lambda.exists p                 => sorry
+  | Lambda.forall p                 => sorry
 
-theorem equisat {σ: Type*} (f: Formula σ) (t: LTLf.Trace σ) :
-  (LTLf.sat t f) ↔ (t.trace ⊨ (toLeanLTL f)) := by
-  induction f generalizing t
-  . rename_i v
-    simp [sat, toLeanLTL, push_fltl, LeanLTL.TraceSet.of]
-  . rename_i f ih
-    simp_all [sat, toLeanLTL, push_fltl]
-  . rename_i f₁ f₂ ih₁ ih₂
-    simp_all [sat, toLeanLTL, push_fltl]
-  . rename_i f ih
-    simp only [sat, toLeanLTL, push_fltl]
-    congr!
-    rename_i h_tl
-    specialize ih {
-      trace := t.trace.shift 1 h_tl
-      finite := by simp_all
-    }
-    simp_all
-  . rename_i f₁ f₂ ih₁ ih₂
-    simp_all [sat, toLeanLTL, push_fltl]
+def toLeanLTL_Phi (p: Phi σ α)
+  (fs: (n: ℕ) → FuncConst n → (FuncVal n α)) (ps: (n: ℕ) → PredConst n → (PredVal n α)) : (LeanLTL.TraceSet σ) :=
+  match p with
+  | Phi.top           => sorry
+  | Phi.lambda f      => sorry
+  | Phi.or f₁ f₂      => sorry
+  | Phi.and f₁ f₂     => sorry
+  | Phi.snext f       => sorry
+  | Phi.wnext f       => sorry
+  | Phi.until f₁ f₂   => sorry
+  | Phi.release f₁ f₂ => sorry
+
+theorem equisat (t: LTLfMT.Trace σ) (p: Phi σ α)
+  (fs: (n: ℕ) → FuncConst n → (FuncVal n α)) (ps: (n: ℕ) → PredConst n → (PredVal n α)) :
+  (LTLfMT.sat_phi t p fs ps) ↔ (t.trace ⊨ (toLeanLTL_Phi p fs ps)) := by
+  sorry
