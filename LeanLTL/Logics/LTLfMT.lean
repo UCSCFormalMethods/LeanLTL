@@ -156,12 +156,12 @@ def sat_phi (t: Trace σ) (p: Phi σ α)
 def toLeanLTL_SigmaTerm (s: SigmaTerm σ α)
   (fs: (n: ℕ) → FuncConst n → (FuncVal n α)) : (LeanLTL.TraceFun σ α) :=
   match s with
-  | SigmaTerm.var v                 => sorry
-  | SigmaTerm.qvar c                => sorry
-  | SigmaTerm.const c               => sorry
+  | SigmaTerm.var v                 => LeanLTL.TraceFun.of v
+  | SigmaTerm.qvar c                => LeanLTL.TraceFun.const c
+  | SigmaTerm.const c               => LeanLTL.TraceFun.const c
   | SigmaTerm.apply (n:=n) fc args  => sorry
-  | SigmaTerm.snext s               => sorry
-  | SigmaTerm.wnext s               => sorry
+  | SigmaTerm.snext f               => sorry
+  | SigmaTerm.wnext f               => sorry
 
 def toLeanLTL_Lambda (l: Lambda σ α)
   (fs: (n: ℕ) → FuncConst n → (FuncVal n α)) (ps: (n: ℕ) → PredConst n → (PredVal n α)) : (LeanLTL.TraceSet σ) :=
