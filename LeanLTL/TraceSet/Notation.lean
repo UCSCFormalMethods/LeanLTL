@@ -214,11 +214,20 @@ macro_rules
   | `(LLTLV[$x])            => return x
 
 section Example
--- variable {σ : Type} (x y : TraceFun σ Nat)
+variable {σ : Type} (x y : TraceFun σ Nat)
 
 -- #check LLTL[(←ˢ x) + (←ˢ x) < X (←ˢ x)]
 -- /-
 -- x.sget fun x_1 ↦ (X x).sget fun X_x ↦ TraceSet.const (x_1 + x_1 < X_x) : TraceSet σ
+-- -/
+
+-- #check LLTL[(←ˢ x) = (←ʷ x)]
+-- /-
+-- x.sget fun x_1 ↦ x.wget fun x ↦ TraceSet.const (x_1 = x) : TraceSet σ
+-- -/
+-- #check LLTL[(←ʷ x) = (←ˢ x)]
+-- /-
+-- x.wget fun x_1 ↦ x.sget fun x ↦ TraceSet.const (x_1 = x) : TraceSet σ
 -- -/
 
 -- #check LLTL[Xˢ ∃ y, (←ˢ x) < y]
