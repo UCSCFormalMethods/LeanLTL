@@ -22,8 +22,8 @@ inductive SigmaTerm (σ) (α) where
   | qvar (c: α)
   | const (c: α)
   | apply {n: ℕ} (fc: FuncConst n) (args: Fin n → (SigmaTerm σ α))
-  | snext (s: SigmaTerm σ α)
-  | wnext (s: SigmaTerm σ α)
+  | snext (v: Var σ α)
+  | wnext (v: Var σ α)
 
 def sigma_term_contains_snext (s: SigmaTerm σ α) : Prop :=
   match s with
@@ -66,22 +66,22 @@ def eval_sigma_term (t: Trace σ) (s: SigmaTerm σ α) (fs: (n: ℕ) → FuncCon
   | SigmaTerm.apply (n:=n) fc args  => do
     let args' ← ofOptions (fun n' => eval_sigma_term t (args n') fs)
     return (fs n fc) args'
-  | SigmaTerm.snext s               => if h_not_last: t.trace.length > 1
+  | SigmaTerm.snext v               => if h_not_last: t.trace.length > 1
                                        then
                                         let next_t : Trace σ := {
                                           trace := t.trace.shift 1 h_not_last
                                           finite := by simp
                                         }
-                                        eval_sigma_term next_t s fs
+                                        some <| v (next_t.trace.toFun 0 (by simp))
                                        else
                                         none
-  | SigmaTerm.wnext s               => if h_not_last: t.trace.length > 1
+  | SigmaTerm.wnext v               => if h_not_last: t.trace.length > 1
                                        then
                                         let next_t : Trace σ := {
                                           trace := t.trace.shift 1 h_not_last
                                           finite := by simp
                                         }
-                                        eval_sigma_term next_t s fs
+                                        some <| v (next_t.trace.toFun 0 (by simp))
                                        else
                                         none
 
