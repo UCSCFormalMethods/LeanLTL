@@ -35,7 +35,7 @@ def sigma_term_contains_snext (s: SigmaTerm σ α) : Prop :=
   | SigmaTerm.wnext _               => False
 
 inductive Lambda (σ) (α) where
-  | alpha {an: ℕ} (pc : PredConst an) (args: Fin an → (SigmaTerm σ α))
+  | alpha {n: ℕ} (pc : PredConst n) (args: Fin n → (SigmaTerm σ α))
   | not (f: Lambda σ α)
   | or (f₁ f₂: Lambda σ α)
   | and (f₁ f₂: Lambda σ α)
@@ -90,10 +90,10 @@ def eval_sigma_term (t: Trace σ) (s: SigmaTerm σ α) (fs: (n: ℕ) → FuncCon
 def sat_lambda (t: Trace σ) (l: Lambda σ α)
   (fs: (n: ℕ) → FuncConst n → (FuncVal n α)) (ps: (n: ℕ) → PredConst n → (PredVal n α)): Prop :=
   match l with
-  | Lambda.alpha (an:=an) pc args =>
+  | Lambda.alpha (n:=n) pc args =>
       let args_def              := ∀ n', (eval_sigma_term t (args n') fs).isSome;
       let contains_snext        := ∀ n', sigma_term_contains_snext (args n');
-      let result (d: args_def)  := ((ps an pc) (fun n' => (eval_sigma_term t (args n') fs).get (by simp_all [args_def])));
+      let result (d: args_def)  := ((ps n pc) (fun n' => (eval_sigma_term t (args n') fs).get (by simp_all [args_def])));
         contains_snext → ∃ (ad: args_def), result ad
       ∧ ¬contains_snext → ∀ (ad: args_def), result ad
   | Lambda.not f        => ¬ (sat_lambda t f fs ps)
@@ -159,14 +159,28 @@ def toLeanLTL_SigmaTerm (s: SigmaTerm σ α)
   | SigmaTerm.var v                 => LeanLTL.TraceFun.of v
   | SigmaTerm.qvar c                => LeanLTL.TraceFun.const c
   | SigmaTerm.const c               => LeanLTL.TraceFun.const c
-  | SigmaTerm.apply (n:=n) fc args  => sorry
-  | SigmaTerm.snext f               => sorry
-  | SigmaTerm.wnext f               => sorry
+  | SigmaTerm.apply (n:=n) fc args  =>
+    { eval := fun t =>
+      let f := (fs n fc)
+      let eval_args := fun fn => (toLeanLTL_SigmaTerm (args fn) fs) t
+      let opt_args := ofOptions eval_args
+      opt_args.map f
+    }
+  | SigmaTerm.snext v               => LeanLTL.TraceFun.next (LeanLTL.TraceFun.of v)
+  | SigmaTerm.wnext v               => LeanLTL.TraceFun.next (LeanLTL.TraceFun.of v)
 
 def toLeanLTL_Lambda (l: Lambda σ α)
   (fs: (n: ℕ) → FuncConst n → (FuncVal n α)) (ps: (n: ℕ) → PredConst n → (PredVal n α)) : (LeanLTL.TraceSet σ) :=
   match l with
-  | Lambda.alpha (an:=an) pc args   => sorry
+  | Lambda.alpha (n:=n) pc args   =>
+    { sat := fun t =>
+      let f := (ps n pc)
+      let eval_args := fun fn => (toLeanLTL_SigmaTerm (args fn) fs) t
+      let opt_args := ofOptions eval_args
+      let opt_result := opt_args.map f
+      let contains_snext := if ∃ fn ,sigma_term_contains_snext (args fn) then False else True
+      opt_result.getD contains_snext
+      }
   | Lambda.not f                    => sorry
   | Lambda.or f₁ f₂                 => sorry
   | Lambda.and f₁ f₂                => sorry
