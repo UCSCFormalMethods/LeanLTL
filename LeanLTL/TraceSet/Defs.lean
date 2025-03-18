@@ -55,11 +55,11 @@ end TraceSet
 #### Propositional logic
 -/
 
-protected def TraceSet.true : TraceSet σ where
-  sat _ := True
+protected def TraceSet.const (p : Prop) : TraceSet σ where
+  sat _ := p
 
-protected def TraceSet.false : TraceSet σ where
-  sat _ := False
+protected def TraceSet.true : TraceSet σ := TraceSet.const True
+protected def TraceSet.false : TraceSet σ := TraceSet.const False
 
 protected def TraceSet.not (f : TraceSet σ) : TraceSet σ := TraceSet.map (¬ ·) f
 protected def TraceSet.and (f₁ f₂ : TraceSet σ) : TraceSet σ := TraceSet.map₂ (· ∧ ·) f₁ f₂
