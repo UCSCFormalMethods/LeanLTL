@@ -30,9 +30,17 @@ namespace TraceSet
 
 /-- Semantic implication. -/
 def sem_imp (f₁ f₂ : TraceSet σ) : Prop := ∀ (t : Trace σ), (t ⊨ f₁) → (t ⊨ f₂)
+def sem_imp_fin (f₁ f₂ : TraceSet σ) : Prop := ∀ (t : Trace σ) (_: t.Finite), (t ⊨ f₁) → (t ⊨ f₂)
+def sem_imp_inf (f₁ f₂ : TraceSet σ) : Prop := ∀ (t : Trace σ) (_: t.Infinite), (t ⊨ f₁) → (t ⊨ f₂)
 
 /-- `f₁ ⇒ f₂` means that whenever a trace satisfies `f₁` then it satisfies `f₂` -/
 notation f₁ " ⇒ " f₂ => TraceSet.sem_imp f₁ f₂
+
+/-- `f₁ ⇒ᶠ f₂` means that whenever a finite trace satisfies `f₁` then it satisfies `f₂` -/
+notation f₁ " ⇒ᶠ " f₂ => TraceSet.sem_imp_fin f₁ f₂
+
+/-- `f₁ ⇒ⁱ f₂` means that whenever a finite trace satisfies `f₁` then it satisfies `f₂` -/
+notation f₁ " ⇒ⁱ " f₂ => TraceSet.sem_imp_inf f₁ f₂
 
 /-- Creates a trace set of all those traces whose state 0 satisfies `p`. -/
 protected def of (p : σ → Prop) : TraceSet σ where

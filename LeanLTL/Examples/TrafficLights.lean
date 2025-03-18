@@ -16,12 +16,12 @@ structure ExState where
   TL2Red: Prop
   TL2Green: Prop
 
-  TL1Arrives : ℚ
-  TL1Departs : ℚ
-  TL2Arrives : ℚ
-  TL2Departs : ℚ
-  TL1Queue : ℚ
-  TL2Queue : ℚ
+  TL1Arrives : ℕ
+  TL1Departs : ℕ
+  TL2Arrives : ℕ
+  TL2Departs : ℕ
+  TL1Queue : ℕ
+  TL2Queue : ℕ
 
 abbrev TL1Green := LeanLTL.TraceSet.of ExState.TL1Green
 abbrev TL1Red := LeanLTL.TraceSet.of ExState.TL1Red
@@ -34,9 +34,8 @@ abbrev TL2Departs := LeanLTL.TraceFun.of ExState.TL2Departs
 abbrev TL1Queue := LeanLTL.TraceFun.of ExState.TL1Queue
 abbrev TL2Queue := LeanLTL.TraceFun.of ExState.TL2Queue
 
-abbrev max_arrives : LeanLTL.TraceFun ExState ℚ := LLTL[1]
-abbrev max_departs : LeanLTL.TraceFun ExState ℚ := LLTL[1]
--- abbrev TL_Queues : {q | q=TL1_Q ∨ q=TL2_Q}
+abbrev max_arrives : ℕ := 2
+abbrev max_departs : ℕ := 2
 
 -- Base Properties
 abbrev TL1StartGreen    := LLTL[TL1Green]
@@ -45,41 +44,36 @@ abbrev TL2StartRed      := LLTL[TL2Red]
 abbrev TL1GreenRedIff   := LLTL[G (TL1Green ↔ (¬TL1Red))]
 abbrev TL2GreenRedIff   := LLTL[G (TL2Green ↔ (¬TL2Red))]
 
-abbrev TL1ToTL2Green    := LLTL[G ((TL1Green ∧ (TL1Queue == 0)) ↔ ((TL2Red ∧ TL1Green) ∧ (Xʷ (TL1Red ∧ TL2Green))))]
-abbrev TL2ToTL1Green    := LLTL[G ((TL2Green ∧ (TL2Queue == 0)) ↔ ((TL1Red ∧ TL2Green) ∧ (Xʷ (TL2Red ∧ TL1Green))))]
+abbrev TL1ToTL2Green    := LLTL[G ((TL1Green ∧ ((← TL1Queue) == 0)) ↔ ((TL2Red ∧ TL1Green) ∧ (Xˢ (TL1Red ∧ TL2Green))))]
+abbrev TL2ToTL1Green    := LLTL[G ((TL2Green ∧ ((← TL2Queue) == 0)) ↔ ((TL1Red ∧ TL2Green) ∧ (Xˢ (TL2Red ∧ TL1Green))))]
 
-abbrev TL1GreenDeparts  := LLTL[G (TL1Green → (TL1Departs == max_departs))]
-abbrev TL1RedDeparts    := LLTL[G (TL1Red → (TL1Departs == 0))]
-abbrev TL2GreenDeparts  := LLTL[G (TL2Green → (TL2Departs == max_departs))]
-abbrev TL2RedDeparts    := LLTL[G (TL2Red → (TL2Departs == 0))]
+abbrev TL1GreenDeparts  := LLTL[G (TL1Green → ((← TL1Departs) == max_departs))]
+abbrev TL1RedDeparts    := LLTL[G (TL1Red → ((← TL1Departs) == 0))]
+abbrev TL2GreenDeparts  := LLTL[G (TL2Green → ((← TL2Departs) == max_departs))]
+abbrev TL2RedDeparts    := LLTL[G (TL2Red → ((← TL2Departs) == 0))]
 
-abbrev TL1ArrivesBounds := LLTL[G (0 ≤ TL1Arrives ∧ TL1Arrives ≤ max_arrives)]
-abbrev TL2ArrivesBounds := LLTL[G (0 ≤ TL2Arrives ∧ TL2Arrives ≤ max_arrives)]
+abbrev TL1ArrivesBounds := LLTL[G (0 ≤ (← TL1Arrives) ∧ (← TL1Arrives) ≤ max_arrives)]
+abbrev TL2ArrivesBounds := LLTL[G (0 ≤ (← TL2Arrives) ∧ (← TL2Arrives) ≤ max_arrives)]
 
-abbrev TL1QueueNext     := LLTL[G ((X TL1Queue) == TL1Queue + TL1Arrives - TL1Departs)]
-abbrev TL2QueueNext     := LLTL[G ((X TL2Queue) == TL2Queue + TL2Arrives - TL2Departs)]
+abbrev TL1QueueNext     := LLTL[G ((X (← TL1Queue)) == (← TL1Queue) + (← TL1Arrives) - (← TL1Departs))]
+abbrev TL2QueueNext     := LLTL[G ((X (← TL2Queue)) == (← TL2Queue) + (← TL2Arrives) - (← TL2Departs))]
 
 abbrev TLBaseProperties := LLTL[TL1StartGreen ∧ TL2StartRed ∧ TL1GreenRedIff ∧ TL2GreenRedIff
                             ∧ TL1ToTL2Green ∧ TL2ToTL1Green ∧ TL1GreenDeparts ∧ TL1RedDeparts
                             ∧ TL2GreenDeparts ∧ TL2RedDeparts ∧ TL1ArrivesBounds ∧ TL2ArrivesBounds
                             ∧ TL1QueueNext ∧ TL2QueueNext]
 
-
 -- Optional Properties
-abbrev ArrivesLtDeparts   := LLTL[(max_arrives < max_departs)]
-abbrev ArrivesLeDeparts   := LLTL[(max_arrives ≤  max_departs)]
-abbrev TrafficLulls       := LLTL[(G (F (TL1Arrives == 0))) ∧ (G (F (TL2Arrives == 0)))]
-
+abbrev TrafficLulls       := LLTL[(G (F ((← TL1Arrives) == 0))) ∧ (G (F ((← TL2Arrives) == 0)))]
 
 -- Goal Properties
 abbrev LightSafety        := LLTL[G (TL1Green ↔ ¬TL2Green)]
-abbrev NeverStarvation    := LLTL[(G (F (TL1Queue == 0))) ∧ (G (F (TL2Queue == 0)))]
-
+abbrev NeverStarvation    := LLTL[(G (F ((← TL1Queue) == 0))) ∧ (G (F ((← TL2Queue) == 0)))]
 
 -- Example Proofs
-theorem SatisfiesLightSafety : TLBaseProperties ⇒ LightSafety := by
-  simp [TLBaseProperties, LeanLTL.TraceSet.sem_imp_iff, LeanLTL.TraceSet.sat_imp_iff]
-  intro t h
+theorem SatisfiesLightSafety : TLBaseProperties ⇒ⁱ LightSafety := by
+  simp [TLBaseProperties, LeanLTL.TraceSet.sem_imp_inf_iff, LeanLTL.TraceSet.sat_imp_iff]
+  intro t h_t_inf h
   simp [LeanLTL.TraceSet.sat_and_iff] at h
   rcases h with ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
   simp [LightSafety]
@@ -92,9 +86,16 @@ theorem SatisfiesLightSafety : TLBaseProperties ⇒ LightSafety := by
   . simp [push_fltl]
     intro n h_n h15 h_n_1
     simp [push_fltl] at *
+
+    by_cases h_ls_change : (t.shift n h_n) ⊨ LLTL[TL1Green == (Xˢ TL1Green)]
+    . simp [push_fltl] at h_ls_change
+      have : 1+n = n+1 := by omega
+      simp [this]
+      sorry
+
     by_cases h_last_state: t.shift n h_n ⊨ TL1Green
-    . have h15 := h15.mp h_last_state
-      simp [*] at h15
+    . have h_last_state' := h15.mp h_last_state
+      simp [*] at h_last_state'
       specialize h5 n h_n
       by_cases h_switch: (t.shift n h_n)⊨LLTL[TL1Queue == 0]
       . have := h5.mp
@@ -113,6 +114,4 @@ theorem SatisfiesLightSafety : TLBaseProperties ⇒ LightSafety := by
       sorry
     . sorry
 
-theorem NeverStarvationCase1 : LLTL[ArrivesLtDeparts ∧ TLBaseProperties] ⇒ NeverStarvation := sorry
-
-theorem NeverStarvationCase2 : LLTL[ArrivesLeDeparts ∧ TrafficLulls ∧ TLBaseProperties] ⇒ NeverStarvation := sorry
+theorem TrafficLullsImpliesNeverStarvation : LLTL[TrafficLulls ∧ TLBaseProperties] ⇒ NeverStarvation := sorry

@@ -128,6 +128,7 @@ where
     match stx with
     | `(←ˢ%$tk $x) => mkBinderFor x (← withRef tk `(TraceFun.sget LLTLV[$x]))
     | `(←ʷ%$tk $x) => mkBinderFor x (← withRef tk `(TraceFun.wget LLTLV[$x]))
+    | `(←%$tk $x)  => mkBinderFor x (← withRef tk `(TraceFun.sget LLTLV[$x]))
     | _ =>
       if let .node _ k args := stx then
         let args ← args.mapM go
