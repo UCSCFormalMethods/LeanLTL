@@ -68,6 +68,14 @@ lemma sat_release_iff' :
 @[push_fltl] theorem sat_globally_iff : (t ⊨ f.globally) ↔ ∀ n, t ⊨ f.wshift n := by
   simp [TraceSet.globally, push_fltl]
 
+@[push_fltl] theorem sat_sget_iff (f : TraceFun σ α) (p : α → TraceSet σ) : (t ⊨ f.sget p) ↔ ∃ x, f t = some x ∧ (t ⊨ p x) := by
+  simp only [TraceFun.sget, TraceFun.get]
+  split <;> simp [*]
+
+@[push_fltl] theorem sat_wget_iff (f : TraceFun σ α) (p : α → TraceSet σ) : (t ⊨ f.wget p) ↔ ∀ x, f t = some x → (t ⊨ p x) := by
+  simp only [TraceFun.wget, TraceFun.get]
+  split <;> simp [*]
+
 @[push_fltl] theorem sem_entail_iff : (⊨ f) ↔ ∀ (t : Trace σ), t ⊨ f := Iff.rfl
 
 @[push_fltl] theorem sem_imp_iff : (f₁ ⇒ f₂) ↔ ∀ (t : Trace σ), t ⊨ f₁.imp f₂ := Iff.rfl
