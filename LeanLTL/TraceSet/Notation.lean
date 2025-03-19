@@ -1,6 +1,7 @@
 import LeanLTL.TraceSet.Defs
 import LeanLTL.TraceFun.Defs
 import LeanLTL.TraceFun.Operations
+import Lean.Elab.AuxDef
 
 import Mathlib
 
@@ -112,23 +113,28 @@ becomes
 TraceFun.sget LLTLV[x] fun x' => TraceSet.const (x' < 10)
 ```
 
+All strong gets come before weak gets.
+
 Assumption: `pushNexts` has already pushed all `X`'s into the strong/weak get operators.
 -/
 partial def liftGets (stx : Term) : MacroM Term := do
   let (stx, quantifiers) ← (go stx).run #[]
-  let stx ← `(TraceSet.const $(⟨stx⟩))
-  quantifiers.foldrM (init := stx) fun (q, n) stx => do
-    `($q fun $n => $stx)
+  let stx ← ``(TraceSet.const $(⟨stx⟩))
+  let quantifiers := quantifiers.filter (·.1) ++ quantifiers.filter (!·.1)
+  quantifiers.foldrM (init := stx) fun (strong, ref, x, n) stx => do
+    let qname := if strong then ``TraceFun.sget else ``TraceFun.wget
+    let q := mkIdentFrom ref qname (canonical := true)
+    `($q $x fun $n => $stx)
 where
   /--
   Descend into the expression, extracting strong/weak get operators, adding them to the state.
-  The state consists of quantifier/binder tuples.
+  The state consists of strong/ref/value/ident tuples.
   -/
-  go (stx : Syntax) : StateT (Array (Term × Ident)) MacroM Syntax := do
+  go (stx : Syntax) : StateT (Array (Bool × Syntax × Term × Ident)) MacroM Syntax := do
     match stx with
-    | `(←ˢ%$tk $x) => mkBinderFor x (← withRef tk `(TraceFun.sget LLTLV[$x]))
-    | `(←ʷ%$tk $x) => mkBinderFor x (← withRef tk `(TraceFun.wget LLTLV[$x]))
-    | `(←%$tk $x)  => mkBinderFor x (← withRef tk `(TraceFun.sget LLTLV[$x]))
+    | `(←ˢ%$tk $x) => mkBinderFor true tk x
+    | `(←ʷ%$tk $x) => mkBinderFor false tk x
+    | `(←%$tk $x)  => mkBinderFor true tk x
     | _ =>
       if let .node _ k args := stx then
         let args ← args.mapM go
@@ -138,13 +144,13 @@ where
   /--
   Find a pre-existing quantifier in the state, or add a new one with a fresh variable name for the binder.
   -/
-  mkBinderFor (x : Term) (q : Term) : StateT (Array (Term × Ident)) MacroM Ident := do
-    if let some (_, n) := (← get).find? fun (q', _) => q == q' then
+  mkBinderFor (strong : Bool) (ref : Syntax) (x : Term) : StateT (Array (Bool × Syntax × Term × Ident)) MacroM Ident := do
+    if let some (_, _, _, n) := (← get).find? fun (strong', _, x', _) => strong == strong' && x == x' then
       return n
     else
       let name ← withFreshMacroScope <| MonadQuotation.addMacroScope <| Name.mkSimple <| mkBaseNameFor x
       let n := mkIdentFrom stx name (canonical := true)
-      modify fun s => s.push (q, n)
+      modify fun s => s.push (strong, ref, x, n)
       return n
   /-- Try to make a variable name for the syntax. Concatenates all atoms/names, separeted by underscores. -/
   mkBaseNameFor (stx : Syntax) : String :=
@@ -163,47 +169,19 @@ def termToTraceSet (stx : Term) : MacroM Term := do
   return stx
 
 macro_rules
-  /- Connectives and quantifiers -/
-  | `(LLTL[$x → $y])        => `(TraceSet.imp LLTL[$x] LLTL[$y])
-  | `(LLTL[$x ↔ $y])        => `(TraceSet.iff LLTL[$x] LLTL[$y])
-  | `(LLTL[$x ∧ $y])        => `(TraceSet.and LLTL[$x] LLTL[$y])
-  | `(LLTL[$x ∨ $y])        => `(TraceSet.or LLTL[$x] LLTL[$y])
-  | `(LLTL[¬$x])            => `(TraceSet.not LLTL[$x])
   -- todo: support full quantifier syntaxes
   | `(LLTL[∃ $n:ident, $y]) => `(TraceSet.exists fun $n => LLTL[$y])
   | `(LLTL[∀ $n:ident, $y]) => `(TraceSet.forall fun $n => LLTL[$y])
-  /- Temporal Operators -/
-  | `(LLTL[Xˢ $x])         => `(TraceSet.snext LLTL[$x])
-  | `(LLTL[Xʷ $x])         => `(TraceSet.wnext LLTL[$x])
-  | `(LLTL[F $x])          => `(TraceSet.finally LLTL[$x])
-  | `(LLTL[G $x])          => `(TraceSet.globally LLTL[$x])
-  | `(LLTL[$x U $y])       => `(TraceSet.until LLTL[$x] LLTL[$y])
-  | `(LLTL[$x R $y])       => `(TraceSet.release LLTL[$x] LLTL[$y])
   /- Parentheses, Constants, and Base Cases -/
   | `(LLTL[($x)])          => `(LLTL[$x])
   | `(LLTL[⊤])             => `(TraceSet.true)
   | `(LLTL[⊥])             => `(TraceSet.false)
-  -- Assuming constants are TraceSet constants,
+  -- Assume constants are TraceSet constants
   | `(LLTL[$c:ident])      => `($c)
   -- Process embedded nexts and gets and treat the result as a `Prop`.
   | `(LLTL[$x])            => termToTraceSet x
 
 macro_rules
-  -- -- Num -> Num Operators
-  -- | `(LLTLV[$x - $y])       => `(TraceFun.sub LLTLV[$x] LLTLV[$y])
-  -- | `(LLTLV[$x + $y])       => `(TraceFun.add LLTLV[$x] LLTLV[$y])
-  -- | `(LLTLV[$x / $y])       => `(TraceFun.div LLTLV[$x] LLTLV[$y])
-  -- | `(LLTLV[$x * $y])       => `(TraceFun.mul LLTLV[$x] LLTLV[$y])
-  -- | `(LLTLV[- $x])          => `(TraceFun.neg LLTLV[$x])
-  -- | `(LLTLV[⌈$x⌉])          => `(TraceFun.ceil LLTLV[$x])
-  -- | `(LLTLV[$x ⊓ $y])       => `(TraceFun.min LLTLV[$x] LLTLV[$y])
-  -- | `(LLTLV[$x ⊔ $y])       => `(TraceFun.max LLTLV[$x] LLTLV[$y])
-  -- -- Num -> Prop Operators
-  -- | `(LLTLV[$x == $y])      => `(TraceFun.eq LLTLV[$x] LLTLV[$y])
-  -- | `(LLTLV[$x < $y])       => `(TraceFun.lt LLTLV[$x] LLTLV[$y])
-  -- | `(LLTLV[$x > $y])       => `(TraceFun.gt LLTLV[$x] LLTLV[$y])
-  -- | `(LLTLV[$x ≤ $y])       => `(TraceFun.leq LLTLV[$x] LLTLV[$y])
-  -- | `(LLTLV[$x ≥ $y])       => `(TraceFun.geq LLTLV[$x] LLTLV[$y])
   -- Temporal Operators
   | `(LLTLV[X $x])          => `(TraceFun.next LLTLV[$x])
   | `(LLTLV[←ˢ $_])         => Macro.throwError "Unexpected unlifted strong get"
@@ -214,13 +192,85 @@ macro_rules
   | `(LLTLV[$x:num])        => `(TraceFun.const $x)
   | `(LLTLV[$x])            => return x
 
-section Example
-variable {σ : Type} (x y : TraceFun σ Nat)
+def stripLLTL (stx : Term) : PrettyPrinter.UnexpandM Term := do
+  match stx with
+  | `(LLTL[$x]) => return x
+  | `($c:ident) => return c
+  | _ => return stx
 
+open scoped Elab.Command
+open Syntax
+
+/-- Wrap all occurrences of the given `ident` nodes in antiquotations -/
+private partial def antiquote (vars : Array Syntax) : Syntax → Syntax
+  | stx => match stx with
+  | `($id:ident) =>
+    if vars.any (fun var => var.getId == id.getId) then
+      mkAntiquotNode id (kind := `term) (isPseudoKind := true)
+    else
+      stx
+  | _ => match stx with
+    | Syntax.node i k args => Syntax.node i k (args.map (antiquote vars))
+    | stx => stx
+
+local macro "declare_lltl_notation " vars:ident* " : " ltl:term " => " t:term : command => do
+  let (c, args) ←
+    match t with
+    | `($c:ident $args*) => pure (c, args)
+    | `($c:ident)        => pure (c, #[])
+    | _                  => Macro.throwUnsupported
+  let macroLHS : Term := ⟨antiquote vars ltl⟩
+  let macroRHSargs : Array Term ← args.mapM (fun arg => `(LLTL[$(⟨antiquote vars arg⟩)]))
+  let macroRHS := Syntax.mkApp c macroRHSargs
+  let unexpandLHS : Term := Syntax.mkApp (← `($$_:ident)) <| args.map (⟨antiquote vars ·⟩)
+  let unexpandRHS ← `(`(LLTL[$macroLHS]))
+  let unexpandRHS ← vars.foldrM (init := unexpandRHS) fun var unexpandRHS => `((stripLLTL $var) >>= fun $var => $unexpandRHS)
+  `(
+  macro_rules
+    | `(LLTL[$macroLHS]) => `($macroRHS)
+  @[scoped app_unexpander $c]
+  aux_def unexpand : PrettyPrinter.Unexpander := fun
+    | `($unexpandLHS) => $unexpandRHS
+    | _ => throw ()
+  )
+
+/- Connectives and quantifiers -/
+declare_lltl_notation p q : p → q => TraceSet.imp p q
+declare_lltl_notation p q : p ↔ q => TraceSet.iff p q
+declare_lltl_notation p q : p ∧ q => TraceSet.and p q
+declare_lltl_notation p q : p ∨ q => TraceSet.or p q
+declare_lltl_notation p   : ¬ p   => TraceSet.not p
+
+/- Temporal Operators -/
+declare_lltl_notation p : Xˢ p => TraceSet.snext p
+declare_lltl_notation p : Xʷ p => TraceSet.wnext p
+declare_lltl_notation p : F p  => TraceSet.finally p
+declare_lltl_notation p : G p  => TraceSet.globally p
+declare_lltl_notation p q : p U q => TraceSet.until p q
+declare_lltl_notation p q : p R q => TraceSet.release p q
+
+section Example
+variable {σ : Type} (p q : TraceSet σ) (x y : TraceFun σ Nat)
+
+/-- info: LLTL[p → ¬q] : TraceSet σ -/
+#guard_msgs in #check LLTL[p → ¬ q]
+
+/-- info: LLTL[p → G ¬q] : TraceSet σ -/
+#guard_msgs in #check LLTL[p → G (¬ q)]
+/-- info: LLTL[G (p → ¬q)] : TraceSet σ -/
+#guard_msgs in #check LLTL[G (p → ¬ q)]
+
+-- #check LLTL[1 + 2 < 3]
+-- #check LLTL[1 + (←ˢ x) < 3]
 -- #check LLTL[(←ˢ x) + (←ˢ x) < X (←ˢ x)]
 -- /-
 -- x.sget fun x_1 ↦ (X x).sget fun X_x ↦ TraceSet.const (x_1 + x_1 < X_x) : TraceSet σ
 -- -/
+
+/-- info: x.sget fun x ↦ y.wget fun y ↦ TraceSet.const (x = y) : TraceSet σ -/
+#guard_msgs in #check LLTL[(←ˢ x) = (←ʷ y)]
+/-- info: y.sget fun y ↦ x.wget fun x ↦ TraceSet.const (x = y) : TraceSet σ -/
+#guard_msgs in #check LLTL[(←ʷ x) = (←ˢ y)]
 
 -- #check LLTL[(←ˢ x) = (←ʷ x)]
 -- /-
@@ -235,6 +285,7 @@ variable {σ : Type} (x y : TraceFun σ Nat)
 -- /-
 -- Xˢ TraceSet.exists fun y ↦ x.sget fun x ↦ TraceSet.const (x < y) : TraceSet σ
 -- -/
+
 end Example
 
 end Notation
