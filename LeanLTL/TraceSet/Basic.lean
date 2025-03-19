@@ -68,8 +68,11 @@ lemma sat_release_iff' :
 @[push_fltl] theorem sat_globally_iff : (t ⊨ f.globally) ↔ ∀ n, t ⊨ f.wshift n := by
   simp [TraceSet.globally, push_fltl]
 
-@[push_fltl] theorem sem_imp_iff : (f₁ ⇒ f₂) ↔ ∀ (t : Trace σ), t ⊨ f₁.imp f₂ := by
-  simp [TraceSet.sem_imp, push_fltl]
+@[push_fltl] theorem sem_entail_iff : (⊨ f) ↔ ∀ (t : Trace σ), t ⊨ f := Iff.rfl
+
+@[push_fltl] theorem sem_imp_iff : (f₁ ⇒ f₂) ↔ ∀ (t : Trace σ), t ⊨ f₁.imp f₂ := Iff.rfl
+
+theorem sem_imp_iff_sem_ential : (f₁ ⇒ f₂) ↔ ⊨ f₁.imp f₂ := Iff.rfl
 
 lemma lt_of_sat_sshift {n : ℕ} (h : t ⊨ f.sshift n) : n < t.length := by
   rw [sat_sshift_iff] at h

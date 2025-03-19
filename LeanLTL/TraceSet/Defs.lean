@@ -22,11 +22,15 @@ structure TraceSet (σ : Type*) where
   sat : Trace σ → Prop
 
 /--
-`t ⊨ f` means that `t` satisfies `f`. That is, `t` is an element of the trace set `f`.
+`t ⊨ p` means that `t` satisfies `p`. That is, `t` is an element of the trace set `p`.
 -/
-notation t " ⊨ " f => TraceSet.sat f t
+notation t " ⊨ " p => TraceSet.sat p t
 
 namespace TraceSet
+
+def sem_entail (p : TraceSet σ) : Prop := ∀ (t : Trace σ), t ⊨ p
+
+notation "⊨ " p => TraceSet.sem_entail p
 
 /-- Semantic implication. -/
 def sem_imp (f₁ f₂ : TraceSet σ) : Prop := ∀ (t : Trace σ), (t ⊨ f₁) → (t ⊨ f₂)
