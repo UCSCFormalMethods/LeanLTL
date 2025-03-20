@@ -1,5 +1,8 @@
 import LeanLTL
+
+open LeanLTL
 open scoped LeanLTL.Notation
+
 -- TODO: Some sort of element, possible optional, that makes this more interesting and undecidable? Right now this could be solved
 --       by LTL MT
 -- TODO: Support naturals/integers instead of rationals
@@ -11,8 +14,8 @@ open scoped LeanLTL.Notation
 
 -- Traffic Light Example
 structure ExState where
-  TL1Green: Prop
-  TL2Green: Prop
+  TL1Green : Prop
+  TL2Green : Prop
 
   TL1Arrives : ℕ
   TL1Departs : ℕ
@@ -21,14 +24,14 @@ structure ExState where
   TL1Queue : ℕ
   TL2Queue : ℕ
 
-abbrev TL1Green := LeanLTL.TraceSet.of ExState.TL1Green
-abbrev TL2Green := LeanLTL.TraceSet.of ExState.TL2Green
-abbrev TL1Arrives := LeanLTL.TraceFun.of ExState.TL1Arrives
-abbrev TL1Departs := LeanLTL.TraceFun.of ExState.TL1Departs
-abbrev TL2Arrives := LeanLTL.TraceFun.of ExState.TL2Arrives
-abbrev TL2Departs := LeanLTL.TraceFun.of ExState.TL2Departs
-abbrev TL1Queue := LeanLTL.TraceFun.of ExState.TL1Queue
-abbrev TL2Queue := LeanLTL.TraceFun.of ExState.TL2Queue
+abbrev TL1Green := TraceSet.of ExState.TL1Green
+abbrev TL2Green := TraceSet.of ExState.TL2Green
+abbrev TL1Arrives := TraceFun.of ExState.TL1Arrives
+abbrev TL1Departs := TraceFun.of ExState.TL1Departs
+abbrev TL2Arrives := TraceFun.of ExState.TL2Arrives
+abbrev TL2Departs := TraceFun.of ExState.TL2Departs
+abbrev TL1Queue := TraceFun.of ExState.TL1Queue
+abbrev TL2Queue := TraceFun.of ExState.TL2Queue
 
 abbrev max_arrives : ℕ := 2
 abbrev max_departs : ℕ := 2
@@ -68,29 +71,32 @@ abbrev NeverStarvation    := LLTL[(G (F ((← TL1Queue) == 0))) ∧ (G (F ((← 
 
 -- Example Proofs
 theorem SatisfiesLightSafety : TLBaseProperties ⇒ⁱ LightSafety := by
-  simp [TLBaseProperties, LeanLTL.TraceSet.sem_imp_inf_iff, LeanLTL.TraceSet.sat_imp_iff]
+  simp [TLBaseProperties, TraceSet.sem_imp_inf_iff, TraceSet.sat_imp_iff]
   intro t h_t_inf h
-  simp [LeanLTL.TraceSet.sat_and_iff] at h
+  simp [TraceSet.sat_and_iff] at h
   rcases h with ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
   have h_ind : t ⊨ LLTL[G ((¬(TL1Green ∧ TL2Green)) ∧ (TL1Green ∨ TL2Green))] := by
-    apply LeanLTL.TraceSet.globally_induction
+    apply TraceSet.globally_induction
     . simp [push_fltl] at h1 h2 ⊢
       tauto
-    . simp [push_fltl] at h3 h4 h5 h6 ⊢
-      intro n h_n ih h_1_n h15
-      specialize h3 n h_n
-      specialize h4 n h_n
-      specialize h5 n h_n
-      specialize h6 n h_n
-      simp [*] at h3 h4 h5 h6
-      by_cases t.shift n h_n ⊨ TL1Green <;> by_cases t.shift n h_n ⊨ LLTL[((← TL1Queue) != 0)] <;> (simp_all; try tauto)
+    . simp [push_fltl, h_t_inf, TraceFun.eval_of_eq] at h3 h4 h5 h6 ⊢
+      intro n hn hn'
+      by_cases h : t.shift n (Trace.coe_lt_length_of_infinite h_t_inf n) ⊨ TL1Green
+      · specialize h3 n h
+        specialize h5 n h
+        tauto
+      · rw [or_iff_not_imp_left] at hn'
+        specialize hn' h
+        specialize h4 n hn'
+        specialize h6 n hn'
+        tauto
   simp [push_fltl] at h_ind ⊢
   simp_all
 
 theorem TrafficLullsImpliesNeverStarvation : LLTL[TrafficLulls ∧ TLBaseProperties] ⇒ⁱ NeverStarvation := by
-  simp [TLBaseProperties, LeanLTL.TraceSet.sem_imp_inf_iff, LeanLTL.TraceSet.sat_imp_iff]
+  simp [TLBaseProperties, TraceSet.sem_imp_inf_iff, TraceSet.sat_imp_iff]
   intro t h_t_inf h
-  simp [LeanLTL.TraceSet.sat_and_iff] at h
+  simp [TraceSet.sat_and_iff] at h
   rcases h with ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15⟩
 
   sorry

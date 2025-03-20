@@ -140,6 +140,12 @@ lemma shift_unshift_one (s : σ) (t : Trace σ) :
 @[simp] lemma finite_unshift_iff (s : σ) (t : Trace σ) : (Trace.unshift s t).Finite ↔ t.Finite := by
   rw [← not_infinite, infinite_unshift_iff, not_infinite]
 
+@[simp] lemma length_eq_of_infinite {t : Trace σ} (h : t.Infinite) : t.length = ⊤ := by
+  rwa [Trace.Infinite] at h
+
+lemma coe_lt_length_of_infinite {t : Trace σ} (h : t.Infinite) (n : Nat) : n < t.length := by
+  simp [h]
+
 @[elab_as_elim]
 theorem unshift_induction {p : (t : Trace σ) → t.Finite → Prop}
     (h1 : ∀ s : σ, p (Trace.singleton s) (by simp))

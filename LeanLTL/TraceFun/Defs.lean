@@ -24,6 +24,11 @@ attribute [coe] TraceFun.eval
 
 namespace TraceFun
 
+/--
+Evaluates `f` and uses `Option.get!` to get the value.
+-/
+protected def eval! [Inhabited α] (f : TraceFun σ α) (t : Trace σ) : α := (f t).get!
+
 /-!
 ### Transformations
 -/

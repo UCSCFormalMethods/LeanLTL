@@ -34,6 +34,8 @@ theorem map₂PreservesSome (g : α → α' → β) (f : TraceFun σ α) (f' : T
 
 @[push_fltl] lemma const_apply (t : Trace σ) (c : α) : TraceFun.const c t = c := by rfl
 
+@[simp] lemma eval_of_eq [Inhabited α] (f : σ → α) (t : Trace σ) : TraceFun.of f t = (TraceFun.of f).eval! t := rfl
+
 /- TODO
 
 @[simp]
