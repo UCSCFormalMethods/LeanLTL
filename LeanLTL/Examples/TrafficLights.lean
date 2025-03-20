@@ -77,9 +77,9 @@ theorem SatisfiesLightSafety : TLBaseProperties ⇒ⁱ LightSafety := by
   rcases h with ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
   have h_ind : t ⊨ LLTL[G ((¬(TL1Green ∧ TL2Green)) ∧ (TL1Green ∨ TL2Green))] := by
     apply TraceSet.globally_induction
-    . simp [push_fltl] at h1 h2 ⊢
+    . simp [push_ltl] at h1 h2 ⊢
       tauto
-    . simp [push_fltl, h_t_inf, TraceFun.eval_of_eq] at h3 h4 h5 h6 ⊢
+    . simp [push_ltl, h_t_inf, TraceFun.eval_of_eq] at h3 h4 h5 h6 ⊢
       intro n hn hn'
       by_cases h : t.shift n (Trace.coe_lt_length_of_infinite h_t_inf n) ⊨ TL1Green
       · specialize h3 n h
@@ -90,7 +90,7 @@ theorem SatisfiesLightSafety : TLBaseProperties ⇒ⁱ LightSafety := by
         specialize h4 n hn'
         specialize h6 n hn'
         tauto
-  simp [push_fltl] at h_ind ⊢
+  simp [push_ltl] at h_ind ⊢
   simp_all
 
 theorem TrafficLullsImpliesNeverStarvation : LLTL[TrafficLulls ∧ TLBaseProperties] ⇒ⁱ NeverStarvation := by
