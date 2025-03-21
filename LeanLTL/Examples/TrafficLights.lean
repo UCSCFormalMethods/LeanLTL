@@ -34,7 +34,7 @@ abbrev TL1Queue := TraceFun.of ExState.TL1Queue
 abbrev TL2Queue := TraceFun.of ExState.TL2Queue
 
 abbrev max_arrives : ℕ := 2
-abbrev max_departs : ℕ := 2
+abbrev max_departs : ℕ := 3
 
 -- Base Properties
 -- TODO: Get rid of red prop
@@ -62,41 +62,88 @@ abbrev TLBaseProperties := LLTL[TL1StartGreen ∧ TL2StartRed ∧ TL1ToTL2Green 
                             ∧ TL2GreenDeparts ∧ TL2RedDeparts ∧ TL1ArrivesBounds ∧ TL2ArrivesBounds
                             ∧ TL1QueueNext ∧ TL2QueueNext]
 
--- Optional Properties
-abbrev TrafficLulls       := LLTL[(G (F ((← TL1Arrives) == 0))) ∧ (G (F ((← TL2Arrives) == 0)))]
-
 -- Goal Properties
-abbrev LightSafety        := LLTL[G (¬(TL1Green ∧ TL2Green))]
-abbrev NeverStarvation    := LLTL[(G (F ((← TL1Queue) == 0))) ∧ (G (F ((← TL2Queue) == 0)))]
+abbrev G_OneLightGreen    := LLTL[G (TL1Green ↔ ¬TL2Green)]
+abbrev G_F_Green          := LLTL[G (F TL1Green) ∧ (G (F TL2Green))]
 
 -- Example Proofs
-theorem SatisfiesLightSafety : TLBaseProperties ⇒ⁱ LightSafety := by
+theorem Satisfies_G_OneLightGreen : TLBaseProperties ⇒ⁱ G_OneLightGreen := by
   simp [TLBaseProperties, TraceSet.sem_imp_inf_iff, TraceSet.sat_imp_iff]
   intro t h_t_inf h
   simp [TraceSet.sat_and_iff] at h
   rcases h with ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
-  have h_ind : t ⊨ LLTL[G ((¬(TL1Green ∧ TL2Green)) ∧ (TL1Green ∨ TL2Green))] := by
-    apply TraceSet.globally_induction
-    . simp [push_ltl] at h1 h2 ⊢
-      tauto
-    . simp [push_ltl, h_t_inf, TraceFun.eval_of_eq] at h3 h4 h5 h6 ⊢
-      intro n hn hn'
-      by_cases h : t.shift n (Trace.coe_lt_length_of_infinite h_t_inf n) ⊨ TL1Green
-      · specialize h3 n h
-        specialize h5 n h
-        tauto
-      · rw [or_iff_not_imp_left] at hn'
-        specialize hn' h
-        specialize h4 n hn'
-        specialize h6 n hn'
-        tauto
-  simp [push_ltl] at h_ind ⊢
-  simp_all
 
-theorem TrafficLullsImpliesNeverStarvation : LLTL[TrafficLulls ∧ TLBaseProperties] ⇒ⁱ NeverStarvation := by
+  apply TraceSet.globally_induction
+  . simp [push_ltl] at h1 h2 ⊢
+    tauto
+  . simp [push_ltl, h_t_inf, TraceFun.eval_of_eq] at h3 h4 h5 h6 ⊢
+    intro n hn
+    by_cases h : t.shift n (Trace.coe_lt_length_of_infinite h_t_inf n) ⊨ TL1Green
+    · specialize h3 n h
+      specialize h5 n h
+      tauto
+    · -- TODO: FIX
+      specialize hn' h
+      specialize h4 n hn'
+      specialize h6 n hn'
+      tauto
+
+theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
   simp [TLBaseProperties, TraceSet.sem_imp_inf_iff, TraceSet.sat_imp_iff]
   intro t h_t_inf h
+  have assumptions := h
   simp [TraceSet.sat_and_iff] at h
-  rcases h with ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15⟩
+  rcases h with ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
+  simp [TraceSet.sat_and_iff]
+  constructor
+  . simp [push_ltl]
+    intro n h_n
+    -- Discharge trivial case where light is currently green
+    by_cases (t.shift n h_n)⊨TL1Green
+    . use 0
+      use (lt_tsub_iff_left.mpr h_n)
+      simp_all
+    rename_i h_not_green
 
-  sorry
+    -- Establish that other light must currently be green
+    have h_f_one_green := Satisfies_G_OneLightGreen
+    simp [TraceSet.sem_imp_inf] at h_f_one_green
+    specialize h_f_one_green t h_t_inf assumptions
+    simp [push_ltl] at h_f_one_green
+    have h_other_green := h_f_one_green n h_n
+    simp [h_not_green] at h_other_green
+
+    -- Establish that the other light must eventually be red
+    have h_f_other_red : (t.shift n h_n)⊨LLTL[F (¬TL2Green)] := by
+
+      sorry
+
+    -- Finish proof
+    simp [push_ltl] at h_f_other_red
+    obtain ⟨n_1, h_n_1_tl, h_n_1⟩ := h_f_other_red
+    use n_1
+    use h_n_1_tl
+    have := h_f_one_green (n_1 + n) (by simp_all)
+    simp_all
+  . sorry
+
+-- TODO: Teaser?
+-- abbrev v : TraceFun ℕ ℕ := TraceFun.proj0
+
+-- example : LLTL[(← v) = 5 ∧ G ((X (←ˢ v)) = ((← v) + 1))] ⇒ⁱ LLTL[G ((←ˢ v) ≥ 5)] := by
+--   simp [TraceSet.sem_imp_inf]
+--   intro t h_t_inf h1
+--   apply TraceSet.globally_induction
+--   . simp_all [push_ltl]
+--   . simp [push_ltl, h_t_inf] at h1 ⊢
+--     intro n x h_x ih
+--     rcases h1 with ⟨h1, h2⟩
+--     specialize h2 n
+--     obtain ⟨x, h2, x_1, h3, h4⟩ := h2
+--     use x_1 + 1
+--     simp_all
+--     rw [← h2]
+--     constructor
+--     .
+--       sorry
+--     . omega
