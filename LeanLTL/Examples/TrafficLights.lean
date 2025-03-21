@@ -82,10 +82,8 @@ theorem Satisfies_G_OneLightGreen : TLBaseProperties ⇒ⁱ G_OneLightGreen := b
     · specialize h3 n h
       specialize h5 n h
       tauto
-    · -- TODO: FIX
-      specialize hn' h
-      specialize h4 n hn'
-      specialize h6 n hn'
+    · specialize h4 n
+      specialize h6 n
       tauto
 
 theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
