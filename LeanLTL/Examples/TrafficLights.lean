@@ -127,6 +127,7 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
     simp_all
   . sorry
 
+namespace Teaser1
 -- TODO: Teaser?
 abbrev v : TraceFun ℕ ℕ := TraceFun.proj0
 
@@ -144,9 +145,22 @@ example : ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G ((
 example : ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G (5 ≤ (← v))] := by
   rw [TraceSet.sem_entail_inf_iff]
   rintro t hinf ⟨h1, h2⟩
-  apply TraceSet.globally_induction
-  · revert h1; simp +contextual [push_ltl, hinf]
-  · simp [push_ltl, hinf] at h2 ⊢
-    intro n hn
-    rw [h2]
-    omega
+  apply TraceSet.globally_induction <;> simp_all [push_ltl, hinf]
+  omega
+
+end Teaser1
+
+noncomputable section
+namespace Teaser2
+axiom σ : Type*
+axiom p : σ → ℕ
+abbrev v : TraceFun σ ℕ := TraceFun.of p
+
+example : ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G (5 ≤ (← v))] := by
+  rw [TraceSet.sem_entail_inf_iff]
+  rintro t hinf ⟨h1, h2⟩
+  apply TraceSet.globally_induction <;> simp_all [push_ltl, hinf]
+  omega
+
+end Teaser2
+end
