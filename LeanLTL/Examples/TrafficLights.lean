@@ -86,6 +86,21 @@ theorem Satisfies_G_OneLightGreen : TLBaseProperties ⇒ⁱ G_OneLightGreen := b
       specialize h6 n
       tauto
 
+theorem Satisfies_G_OneLightGreen' : ⊨ⁱ LLTL[TLBaseProperties → G_OneLightGreen] := by
+  intro t h_t_inf h
+  rcases h with ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
+  apply TraceSet.globally_induction
+  . simp [push_ltl] at h1 h2 ⊢
+    tauto
+  . simp [push_ltl, h_t_inf, TraceFun.eval_of_eq] at h3 h4 h5 h6 ⊢
+    intro n hn
+    specialize h3 n
+    specialize h4 n
+    specialize h5 n
+    specialize h6 n
+    simp_all
+    tauto
+
 theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
   simp [TLBaseProperties, TraceSet.sem_imp_inf_iff, TraceSet.sat_imp_iff]
   intro t h_t_inf h
@@ -141,9 +156,9 @@ example : ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G ((
     omega
 
 example : ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G (5 ≤ (← v))] := by
-  rw [TraceSet.sem_entail_inf_iff]
+  --rw [TraceSet.sem_entail_inf_iff]
   rintro t hinf ⟨h1, h2⟩
-  apply TraceSet.globally_induction <;> simp_all [push_ltl, hinf]
+  apply TraceSet.globally_induction <;> simp_all [push_ltl]
   omega
 
 end Teaser1
@@ -153,8 +168,20 @@ example (σ : Type*) (p : σ → ℕ) :
     ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G (5 ≤ (← v))] := by
   rw [TraceSet.sem_entail_inf_iff]
   rintro t hinf ⟨h1, h2⟩
-  apply TraceSet.globally_induction <;> simp_all [push_ltl, hinf]
+  apply TraceSet.globally_induction <;> simp_all [push_ltl]
   omega
+
+example (σ : Type*) (p : σ → ℕ) :
+    let v := TraceFun.of p
+    ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G (5 ≤ (← v))] := by
+  simp +contextual [push_ltl]
+  intro _ _ _ h n
+  induction n with
+  | zero => simp_all
+  | succ n ih =>
+    specialize h n
+    simp_all [add_comm]
+    omega
 
 noncomputable section
 namespace Teaser2
