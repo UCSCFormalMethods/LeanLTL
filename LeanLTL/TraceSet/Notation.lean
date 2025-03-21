@@ -86,8 +86,13 @@ where
   go (xstack : List Syntax) (stx : Syntax) : MacroM Syntax := do
     match stx with
     | `(←ˢ%$tk $x) => `(←ˢ%$tk $(← wrapXs xstack x))
+    | `(←%$tk $x)  => `(←%$tk $(← wrapXs xstack x))
     | `(←ʷ%$tk $x) => `(←ʷ%$tk $(← wrapXs xstack x))
-    | `(X%$tk $stx') => go (tk :: xstack) stx'
+    | `(X%$tk $stx') =>
+      let res ← go (tk :: xstack) stx'
+      if (res.find? (·==tk)).isNone then
+        Macro.throwErrorAt tk "superfluous X, expression is time-invariant"
+      return res
     | _ =>
       if let .node _ k args := stx then
         let args ← args.mapM (go xstack)
@@ -169,28 +174,32 @@ def termToTraceSet (stx : Term) : MacroM Term := do
   return stx
 
 macro_rules
-  -- todo: support full quantifier syntaxes
-  | `(LLTL[∃ $n:ident, $y]) => `(TraceSet.exists fun $n => LLTL[$y])
-  | `(LLTL[∀ $n:ident, $y]) => `(TraceSet.forall fun $n => LLTL[$y])
-  /- Parentheses, Constants, and Base Cases -/
-  | `(LLTL[($x)])          => `(LLTL[$x])
-  | `(LLTL[⊤])             => `(TraceSet.true)
-  | `(LLTL[⊥])             => `(TraceSet.false)
-  -- Assume constants are TraceSet constants
-  | `(LLTL[$c:ident])      => `($c)
-  -- Process embedded nexts and gets and treat the result as a `Prop`.
-  | `(LLTL[$x])            => termToTraceSet x
+  | `(LLTL[$p]) => withRef p do
+    match p with
+    -- todo: support full quantifier syntaxes
+    | `(∃ $n:ident, $y) => `(TraceSet.exists fun $n => LLTL[$y])
+    | `(∀ $n:ident, $y) => `(TraceSet.forall fun $n => LLTL[$y])
+    /- Parentheses, Constants, and Base Cases -/
+    | `(($p))          => `(LLTL[$p])
+    | `(⊤)             => `(TraceSet.true)
+    | `(⊥)             => `(TraceSet.false)
+    -- Assume constants are TraceSet constants
+    | `($c:ident)      => `($c)
+    -- Process embedded nexts and gets and treat the result as a `Prop`.
+    | _                => termToTraceSet p
 
 macro_rules
-  -- Temporal Operators
-  | `(LLTLV[X $x])          => `(TraceFun.next LLTLV[$x])
-  | `(LLTLV[←ˢ $_])         => Macro.throwError "Unexpected unlifted strong get"
-  | `(LLTLV[←ʷ $_])         => Macro.throwError "Unexpected unlifted weak get"
-  -- Parentheses, Constants, and Base Cases
-  | `(LLTLV[($x)])          => `(LLTLV[$x])
-  | `(LLTLV[$x:scientific]) => `(TraceFun.const $x)
-  | `(LLTLV[$x:num])        => `(TraceFun.const $x)
-  | `(LLTLV[$x])            => return x
+  | `(LLTLV[$v]) => withRef v do
+    match v with
+    -- Temporal Operators
+    | `(X $x)          => `(TraceFun.next LLTLV[$x])
+    | `(←ˢ $_)         => Macro.throwError "Unexpected unlifted strong get"
+    | `(←ʷ $_)         => Macro.throwError "Unexpected unlifted weak get"
+    -- Parentheses, Constants, and Base Cases
+    | `(($x))          => `(LLTLV[$x])
+    | `($x:scientific) => `(TraceFun.const $x)
+    | `($x:num)        => `(TraceFun.const $x)
+    | `($x)            => return x
 
 def stripLLTL (stx : Term) : PrettyPrinter.UnexpandM Term := do
   match stx with

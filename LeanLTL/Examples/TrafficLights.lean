@@ -128,22 +128,15 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
   . sorry
 
 -- TODO: Teaser?
--- abbrev v : TraceFun ℕ ℕ := TraceFun.proj0
+abbrev v : TraceFun ℕ ℕ := TraceFun.proj0
 
--- example : LLTL[(← v) = 5 ∧ G ((X (←ˢ v)) = ((← v) + 1))] ⇒ⁱ LLTL[G ((←ˢ v) ≥ 5)] := by
---   simp [TraceSet.sem_imp_inf]
---   intro t h_t_inf h1
---   apply TraceSet.globally_induction
---   . simp_all [push_ltl]
---   . simp [push_ltl, h_t_inf] at h1 ⊢
---     intro n x h_x ih
---     rcases h1 with ⟨h1, h2⟩
---     specialize h2 n
---     obtain ⟨x, h2, x_1, h3, h4⟩ := h2
---     use x_1 + 1
---     simp_all
---     rw [← h2]
---     constructor
---     .
---       sorry
---     . omega
+example : ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G ((← v) ≥ 5)] := by
+  simp +contextual [push_ltl]
+  intros t tinf hp0 hi n
+  induction n with
+  | zero => simp_all
+  | succ n ih =>
+    specialize hi n
+    simp only [add_comm] at *
+    rw [hi]
+    omega

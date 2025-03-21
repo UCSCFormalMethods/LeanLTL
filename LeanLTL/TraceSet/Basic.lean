@@ -78,6 +78,10 @@ lemma sat_release_iff' :
 
 @[push_ltl] theorem sem_entail_iff : (⊨ f) ↔ ∀ (t : Trace σ), t ⊨ f := Iff.rfl
 
+@[push_ltl] theorem sem_entail_fin_iff : (⊨ᶠ f) ↔ ∀ (t : Trace σ), t.Finite → t ⊨ f := Iff.rfl
+
+@[push_ltl] theorem sem_entail_inf_iff : (⊨ⁱ f) ↔ ∀ (t : Trace σ), t.Infinite → t ⊨ f := Iff.rfl
+
 @[push_ltl] theorem sem_imp_iff : (f₁ ⇒ f₂) ↔ ∀ (t : Trace σ), t ⊨ f₁.imp f₂ := Iff.rfl
 
 theorem sem_imp_iff_sem_ential : (f₁ ⇒ f₂) ↔ ⊨ f₁.imp f₂ := Iff.rfl

@@ -17,7 +17,7 @@ We need partially definedness for FLTL.
 structure TraceFun (σ α : Type*) where
   eval : Trace σ → Option α
 
-instance {σ α : Type*} : CoeFun (TraceFun σ α) (fun _ => Trace σ → (Option α)) where
+instance {σ α : Type*} : CoeFun (TraceFun σ α) (fun _ => Trace σ → Option α) where
   coe := TraceFun.eval
 
 attribute [coe] TraceFun.eval

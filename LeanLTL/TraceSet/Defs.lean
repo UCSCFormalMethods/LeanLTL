@@ -29,8 +29,12 @@ notation t " ⊨ " p => TraceSet.sat p t
 namespace TraceSet
 
 def sem_entail (p : TraceSet σ) : Prop := ∀ (t : Trace σ), t ⊨ p
+def sem_entail_fin (p : TraceSet σ) : Prop := ∀ (t : Trace σ), t.Finite → t ⊨ p
+def sem_entail_inf (p : TraceSet σ) : Prop := ∀ (t : Trace σ), t.Infinite → t ⊨ p
 
 notation "⊨ " p => TraceSet.sem_entail p
+notation "⊨ᶠ " p => TraceSet.sem_entail_fin p
+notation "⊨ⁱ " p => TraceSet.sem_entail_inf p
 
 /-- Semantic implication. -/
 def sem_imp (f₁ f₂ : TraceSet σ) : Prop := ∀ (t : Trace σ), (t ⊨ f₁) → (t ⊨ f₂)
@@ -83,6 +87,9 @@ protected def TraceSet.exists (p : α → TraceSet σ) : TraceSet σ where
   sat t := ∃ x, (t ⊨ p x)
 protected def TraceSet.forall (p : α → TraceSet σ) : TraceSet σ where
   sat t := ∀ x, (t ⊨ p x)
+
+set_option pp.structureInstanceTypes true in
+#check (1,2,3)
 
 /-!
 #### Temporal operators

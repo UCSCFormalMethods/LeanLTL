@@ -1,4 +1,5 @@
 import LeanLTL.TraceFun.Defs
+import LeanLTL.Trace.Basic
 import LeanLTL.Util.SimpAttrs
 import Mathlib
 
@@ -35,6 +36,12 @@ theorem map₂PreservesSome (g : α → α' → β) (f : TraceFun σ α) (f' : T
 @[push_ltl] lemma const_apply (t : Trace σ) (c : α) : TraceFun.const c t = c := by rfl
 
 @[simp] lemma eval_of_eq [Inhabited α] (f : σ → α) (t : Trace σ) : TraceFun.of f t = (TraceFun.of f).eval! t := rfl
+
+@[simp] lemma eval_proj0_eq [Inhabited σ] (t : Trace σ) : TraceFun.proj0 t = TraceFun.proj0.eval! t := rfl
+
+@[simp] lemma shift_apply (t : Trace σ) (h : t.Infinite) (f : TraceFun σ α) (n : ℕ) :
+    (f.shift n) t = f (t.shift n (by simp [h])) := by
+  simp [TraceFun.shift, h]
 
 /- TODO
 
