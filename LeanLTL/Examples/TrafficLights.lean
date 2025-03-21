@@ -150,6 +150,14 @@ example : ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G (5
 
 end Teaser1
 
+example (σ : Type*) (p : σ → ℕ) :
+    let v := TraceFun.of p
+    ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G (5 ≤ (← v))] := by
+  rw [TraceSet.sem_entail_inf_iff]
+  rintro t hinf ⟨h1, h2⟩
+  apply TraceSet.globally_induction <;> simp_all [push_ltl, hinf]
+  omega
+
 noncomputable section
 namespace Teaser2
 axiom σ : Type*
