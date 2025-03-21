@@ -10,5 +10,6 @@ import LeanLTL.TraceSet.Defs
 import LeanLTL.TraceSet.Notation
 import LeanLTL.TraceSet.ToFun
 import LeanLTL.Util.SimpAttrs
+import LeanLTL.Tactic.PushLTL
 import LeanLTL.ForMathlib
 import LeanLTL.Init

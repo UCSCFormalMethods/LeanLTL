@@ -140,3 +140,13 @@ example : ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G ((
     simp only [add_comm] at *
     rw [hi]
     omega
+
+example : ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G (5 ≤ (← v))] := by
+  rw [TraceSet.sem_entail_inf_iff]
+  rintro t hinf ⟨h1, h2⟩
+  apply TraceSet.globally_induction
+  · revert h1; simp +contextual [push_ltl, hinf]
+  · simp [push_ltl, hinf] at h2 ⊢
+    intro n hn
+    rw [h2]
+    omega
