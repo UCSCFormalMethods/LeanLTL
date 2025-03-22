@@ -332,6 +332,11 @@ lemma finally_true : TraceSet.true.finally = (TraceSet.true : TraceSet σ) := by
 lemma finally_false : TraceSet.false.finally = (TraceSet.false : TraceSet σ) := by
   simp [finally_eq_true_until]
 
+theorem sat_finally_of (h : t ⊨ f) : t ⊨ f.finally := by
+  rw [sat_finally_iff]
+  use 0
+  simpa
+
 lemma sshift_until (n : ℕ) : (f₁.until f₂).sshift n = (f₁.sshift n).until (f₂.sshift n) := by
   ext t
   simp [push_ltl]
