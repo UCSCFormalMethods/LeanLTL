@@ -477,6 +477,33 @@ lemma globally_and_distrib : (f₁.and f₂).globally = f₁.globally.and f₂.g
 ### Conditional lemmas
 -/
 
+theorem not_anti (h : f₁ ⇒ f₂) : f₂.not ⇒ f₁.not := by
+  intro t
+  exact mt (h t)
+
+theorem snext_mono (h : f₁ ⇒ f₂) : f₁.snext ⇒ f₂.snext := by
+  simp +contextual only [sem_imp_iff, sat_imp_iff, sat_sshift_iff, Nat.cast_one,
+    forall_exists_index, exists_true_left]
+  intro _ _ h'
+  exact h _ h'
+
+theorem wnext_mono (h : f₁ ⇒ f₂) : f₁.wnext ⇒ f₂.wnext := by
+  simp only [sem_imp_iff, sat_imp_iff, sat_wshift_iff, Nat.cast_one]
+  intro _ h' h''
+  exact h _ (h' h'')
+
+theorem globally_mono (h : f₁ ⇒ f₂) : f₁.globally ⇒ f₂.globally := by
+  simp only [sem_imp_iff, sat_imp_iff, sat_globally_iff, sat_wshift_iff]
+  intro _ h'
+  peel h'
+  exact h _ this
+
+theorem finally_mono (h : f₁ ⇒ f₂) : f₁.finally ⇒ f₂.finally := by
+  rw [finally_eq_not_globally_not, finally_eq_not_globally_not]
+  apply not_anti
+  apply globally_mono
+  apply not_anti h
+
 theorem sat_globally_imp_of (h : t ⊨ (f₁.imp f₂).globally) : t ⊨ f₁.globally.imp f₂.globally := by
   simp only [sat_globally_iff, sat_wshift_iff, sat_imp_iff] at h ⊢
   intro h1 _ _
