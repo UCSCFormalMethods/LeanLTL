@@ -474,6 +474,42 @@ lemma globally_and_distrib : (f₁.and f₂).globally = f₁.globally.and f₂.g
   ext t; simp [push_ltl, forall_and]
 
 /-!
+### Conditional lemmas
+-/
+
+theorem sat_globally_imp_of (h : t ⊨ (f₁.imp f₂).globally) : t ⊨ f₁.globally.imp f₂.globally := by
+  simp only [sat_globally_iff, sat_wshift_iff, sat_imp_iff] at h ⊢
+  intro h1 _ _
+  apply h
+  apply h1
+
+theorem sat_finally_imp_finally_of (h : t ⊨ (f₁.imp f₂).globally) : t ⊨ f₁.finally.imp f₂.finally := by
+  simp only [sat_globally_iff, sat_wshift_iff, sat_imp_iff, sat_finally_iff, sat_sshift_iff,
+    forall_exists_index] at h ⊢
+  intro n hn h2
+  refine ⟨_, _, h n hn h2⟩
+
+theorem sat_finally_imp_of (h : t ⊨ f₁.finally.imp f₂.finally) : t ⊨ (f₁.imp f₂).finally := by
+  simp only [sat_imp_iff, sat_finally_iff, sat_sshift_iff, forall_exists_index] at h ⊢
+  by_cases h' : t ⊨ f₂.finally
+  · simp only [sat_finally_iff, sat_sshift_iff] at h'
+    obtain ⟨n, hn, h'⟩ := h'
+    use n, hn
+    simp [h']
+  · simp only [sat_finally_iff, sat_sshift_iff, not_exists] at h'
+    specialize h 0
+    simp only [CharP.cast_eq_zero, Trace.nempty, Trace.shift_zero, h', exists_false, exists_const,
+      imp_false, forall_const] at h
+    use 0
+    simp [h]
+
+theorem sat_finally_imp_of_finally_imp (h : t ⊨ f₁.finally.imp f₂.globally) : t ⊨ (f₁.imp f₂).globally := by
+  simp only [sat_imp_iff, sat_finally_iff, sat_sshift_iff, sat_globally_iff, sat_wshift_iff,
+    forall_exists_index] at h ⊢
+  intro n _ h'
+  exact h n _ h' _ _
+
+/-!
 ### Temporal unfolding
 -/
 
