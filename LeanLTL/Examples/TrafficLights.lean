@@ -101,6 +101,15 @@ theorem Satisfies_G_OneLightGreen' : ⊨ⁱ LLTL[TLBaseProperties → G_OneLight
     simp_all
     tauto
 
+theorem no_decreasing_nat_function (f : Nat → Nat) (h : ∀ n, f n > f (n + 1)) : False := by
+  generalize hm : f 0 = m
+  induction m using Nat.strongRecOn generalizing f with | _ m ih => ?_
+  cases hm
+  refine ih (f 1) (h 0) (fun n => f (n + 1)) ?_ rfl
+  intro
+  apply h
+
+
 theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
   simp [TLBaseProperties, TraceSet.sem_imp_inf_iff, TraceSet.sat_imp_iff]
   intro t h_t_inf h
@@ -127,9 +136,35 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
     simp [h_not_green] at h_other_green
 
     -- Establish that the other light must eventually be red
-    have h_f_other_red : (t.shift n h_n)⊨LLTL[F (¬TL2Green)] := by
+    have h_f_other_red : (t.shift n h_n) ⊨ LLTL[F (¬TL2Green)] := by
       simp [push_ltl]
-      -- Exists a timestep > n where TL2Quue is 0
+      have : ∃ i, (t.shift (n + i) (by simp_all)) ⊨ LLTL[(← TL2Queue) = 0] := by
+        by_contra! h
+        simp [push_ltl] at h
+        -- TL2Queue not zero for all time, so TL2Green must remain true
+        have : ∀ i, (t.shift (n + i) (by simp_all)) ⊨ LLTL[TL2Green] := by
+          intro i
+          induction i with
+          | zero => simpa
+          | succ i ih =>
+            simp [push_ltl] at h6
+            obtain ⟨_, _, h6⟩ := h6 (n + i) (by simp_all) ih (h i)
+            convert h6 using 2
+            ring
+        apply no_decreasing_nat_function (fun i => TL2Queue.eval! (t.shift (n + i) (by simp_all)))
+        intro i
+        simp [push_ltl, h_t_inf] at h14
+        specialize h14 (n + i)
+        have fact : 1 + (n + i) = n + (i + 1) := by ring
+        simp_rw [fact] at h14
+        simp_rw [h14]
+        specialize h i
+        simp [push_ltl, h_t_inf, max_arrives, max_departs] at h12 h9
+        specialize h12 (n + i)
+        specialize h9 (n + i) (this _)
+        simp [TL2Queue]
+        omega
+      -- Exists a timestep > n where TL2Queue is 0
       have h_exists_i : ∃ i, (t.shift (n+i) (by simp_all))⊨LLTL[TL2Green ∧ (← TL2Queue)=0] := by
 
         sorry
