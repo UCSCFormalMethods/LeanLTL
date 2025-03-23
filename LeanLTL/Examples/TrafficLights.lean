@@ -128,9 +128,29 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
 
     -- Establish that the other light must eventually be red
     have h_f_other_red : (t.shift n h_n)⊨LLTL[F (¬TL2Green)] := by
+      simp [push_ltl]
+      -- Exists a timestep > n where TL2Quue is 0
+      have h_exists_i : ∃ i, (t.shift (n+i) (by simp_all))⊨LLTL[TL2Green ∧ (← TL2Queue)=0] := by
 
-      sorry
-
+        sorry
+      -- Let n₀ be the earliest point that TL2Queue is 0
+      generalize h_is: {i | (t.shift (n+i) (by simp_all))⊨LLTL[TL2Green ∧ (← TL2Queue)=0]} = is
+      have h_is_nempty : is.Nonempty := by
+        simp_all [← h_is]
+        exact h_exists_i
+      have h_inf_mem_is := Nat.sInf_mem h_is_nempty
+      simp [← h_is] at h_inf_mem_is
+      simp [h_is] at h_inf_mem_is
+      simp [push_ltl] at h_inf_mem_is
+      -- Use n₀+1
+      use (sInf is) + 1
+      simp [*]
+      simp [push_ltl] at h4
+      specialize h4 (n + sInf is)
+      simp [*] at h4
+      obtain ⟨_, h4⟩ := h4
+      ring_nf at h4 ⊢
+      simp_all
     -- Finish proof
     simp [push_ltl] at h_f_other_red
     obtain ⟨n_1, h_n_1_tl, h_n_1⟩ := h_f_other_red
@@ -186,8 +206,8 @@ example (σ : Type*) (p : σ → ℕ) :
 noncomputable section
 namespace Teaser2
 axiom σ : Type*
-axiom p : σ → ℕ
-abbrev x : TraceFun σ ℕ := TraceFun.of p
+axiom p : σ → ℤ
+abbrev x : TraceFun σ ℤ := TraceFun.of p
 
 example : ⊨ⁱ LLTL[((← x) = 5 ∧ G ((X (← x)) = (← x) ^ 2)) → G (5 ≤ (← x))] := by
   rw [TraceSet.sem_entail_inf_iff]
