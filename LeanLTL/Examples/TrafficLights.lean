@@ -187,13 +187,13 @@ noncomputable section
 namespace Teaser2
 axiom σ : Type*
 axiom p : σ → ℕ
-abbrev v : TraceFun σ ℕ := TraceFun.of p
+abbrev x : TraceFun σ ℕ := TraceFun.of p
 
-example : ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G (5 ≤ (← v))] := by
+example : ⊨ⁱ LLTL[((← x) = 5 ∧ G ((X (← x)) = (← x) ^ 2)) → G (5 ≤ (← x))] := by
   rw [TraceSet.sem_entail_inf_iff]
   rintro t hinf ⟨h1, h2⟩
   apply TraceSet.globally_induction <;> simp_all [push_ltl, hinf]
-  omega
+  intros; nlinarith
 
 end Teaser2
 end
