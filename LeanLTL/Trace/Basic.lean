@@ -134,6 +134,10 @@ lemma shift_unshift_one (s : σ) (t : Trace σ) :
   · simp
   · norm_cast; simp only [ENat.coe_ne_top]
 
+@[simp] lemma infinite_lt_length (t : Trace σ ) (h_t_inf: t.Infinite) (n: ℕ) : n < t.length := by
+  unfold Trace.Infinite at h_t_inf
+  simp [h_t_inf]
+
 @[simp] lemma finite_shift_iff (t : Trace σ) {i} {h} : (Trace.shift t i h).Finite ↔ t.Finite := by
   rw [← not_infinite, infinite_shift_iff, not_infinite]
 
