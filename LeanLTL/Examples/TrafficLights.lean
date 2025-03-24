@@ -214,7 +214,105 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
     use h_n_1_tl
     have := h_f_one_green (n_1 + n) (by simp_all)
     simp_all
-  . sorry
+  . simp [push_ltl]
+    intro n h_n
+    -- Discharge trivial case where light is currently green
+    by_cases (t.shift n h_n)⊨TL2Green
+    . use 0
+      use (lt_tsub_iff_left.mpr h_n)
+      simp_all
+    rename_i h_not_green
+
+    -- Establish that other light must currently be green
+    have h_f_one_green := Satisfies_G_OneLightGreen
+    simp [TraceSet.sem_imp_inf] at h_f_one_green
+    specialize h_f_one_green t h_t_inf assumptions
+    simp [push_ltl] at h_f_one_green
+    have h_other_green := h_f_one_green n h_n
+    simp [h_not_green] at h_other_green
+
+    -- Establish that the other light must eventually be red
+    have h_f_other_red : (t.shift n h_n) ⊨ LLTL[F (¬TL1Green)] := by
+      simp [push_ltl]
+      have : ∃ i, (t.shift (n + i) (by simp_all)) ⊨ LLTL[(← TL1Queue) = 0] := by
+        by_contra! h
+        simp [push_ltl] at h
+        -- TL2Queue not zero for all time, so TL2Green must remain true
+        have : ∀ i, (t.shift (n + i) (by simp_all)) ⊨ LLTL[TL1Green] := by
+          intro i
+          induction i with
+          | zero => simpa
+          | succ i ih =>
+            simp [push_ltl] at h5
+            obtain ⟨_, _, h5⟩ := h5 (n + i) (by simp_all) ih (h i)
+            convert h5 using 2
+            ring_nf at *
+            simp_all
+        apply no_decreasing_nat_function (fun i => TL1Queue.eval! (t.shift (n + i) (by simp_all)))
+        intro i
+        simp [push_ltl, h_t_inf] at h13
+        specialize h13 (n + i)
+        have fact : 1 + (n + i) = n + (i + 1) := by ring
+        simp_rw [fact] at h13
+        ring_nf at h13 ⊢
+        rw [h13]
+        specialize h i
+        simp [push_ltl, h_t_inf, max_arrives, max_departs] at h11 h7
+        specialize h11 (n + i)
+        specialize h7 (n + i) (this _)
+        simp [TL1Queue]
+        omega
+      let i₀ := by classical exact Nat.find this
+      have fact1 : (t.shift (n+i₀) (by simp_all)) ⊨ LLTL[(← TL1Queue) = 0] := by
+        classical
+        exact Nat.find_spec this
+      have fact2 : ∀ i ≤ i₀, (t.shift (n + i) (by simp_all)) ⊨ LLTL[TL1Green] := by
+        intro i
+        induction i with
+        | zero => simp_all
+        | succ i ih =>
+          intro h
+          specialize ih (by omega)
+          classical
+          have := Nat.find_min this h
+          simp [push_ltl, h_t_inf] at this
+          simp [push_ltl, h_t_inf] at h5
+          specialize h5 (n + i) ih this
+          convert h5.2 using 2
+          ring_nf at *
+          simp_all
+      -- Exists a timestep > n where TL2Queue is 0
+      have h_exists_i : ∃ i, (t.shift (n+i) (by simp_all)) ⊨ LLTL[TL1Green ∧ (← TL1Queue)=0] := by
+        use i₀
+        simp [push_ltl, h_t_inf] at fact1 fact2 ⊢
+        constructor
+        · exact fact2 i₀ (by simp)
+        · exact fact1
+      -- Let n₀ be the earliest point that TL2Queue is 0
+      generalize h_is: {i | (t.shift (n+i) (by simp_all))⊨LLTL[TL1Green ∧ (← TL1Queue)=0]} = is
+      have h_is_nempty : is.Nonempty := by
+        simp_all [← h_is]
+        exact h_exists_i
+      have h_inf_mem_is := Nat.sInf_mem h_is_nempty
+      simp [← h_is] at h_inf_mem_is
+      simp [h_is] at h_inf_mem_is
+      simp [push_ltl] at h_inf_mem_is
+      -- Use n₀+1
+      use (sInf is) + 1
+      simp [*]
+      simp [push_ltl] at h3
+      specialize h3 (n + sInf is) (by simp_all)
+      simp [h_inf_mem_is] at h3
+      obtain ⟨_, h3⟩ := h3
+      ring_nf at h3 ⊢
+      simp_all
+    -- Finish proof
+    simp [push_ltl] at h_f_other_red
+    obtain ⟨n_1, h_n_1_tl, h_n_1⟩ := h_f_other_red
+    use n_1
+    use h_n_1_tl
+    have := h_f_one_green (n_1 + n) (by simp_all)
+    simp_all
 
 namespace Teaser1
 -- TODO: Teaser?
