@@ -3,15 +3,6 @@ import LeanLTL
 open LeanLTL
 open scoped LeanLTL.Notation
 
--- TODO: Some sort of element, possible optional, that makes this more interesting and undecidable? Right now this could be solved
---       by LTL MT
--- TODO: Support naturals/integers instead of rationals
--- TODO: Rewrite this, maybe using quantifiers, to be more compact/support more lights?
--- TODO: Use quantifiers over max_arrives, max_departs, to make problem more interesting?
---         (e.g. prove we can avoid starvation if max_departs > max_arrives and there's always eventually a break in traffic)
---       Or is there a better way to represent constant values in state across formulas? We could do it by declaring a signal that never changes,
---       but maybe we can add a shorthand?
-
 -- Traffic Light Example
 structure ExState where
   (TL1Red TL1Green : Prop)
@@ -32,7 +23,6 @@ abbrev max_arrives : ℕ := 2
 abbrev max_departs : ℕ := 3
 
 -- Base Properties
--- TODO: Get rid of red prop
 abbrev TL1StartGreen    := LLTL[TL1Green]
 abbrev TL2StartRed      := LLTL[¬TL2Green]
 
