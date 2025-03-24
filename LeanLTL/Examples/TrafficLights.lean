@@ -96,7 +96,7 @@ theorem Satisfies_G_OneLightGreen' : ⊨ⁱ LLTL[TLBaseProperties → G_OneLight
     simp_all
     tauto
 
-theorem no_decreasing_nat_function (f : Nat → Nat) (h : ∀ n, f n > f (n + 1)) : False := by
+lemma no_decreasing_nat_function (f : Nat → Nat) (h : ∀ n, f n > f (n + 1)) : False := by
   generalize hm : f 0 = m
   induction m using Nat.strongRecOn generalizing f with | _ m ih => ?_
   cases hm
@@ -177,27 +177,13 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
           specialize h6 (n + i) ih this
           convert h6.2 using 2
           ring
-      -- Exists a timestep > n where TL2Queue is 0
-      have h_exists_i : ∃ i, (t.shift (n+i) (by simp_all)) ⊨ LLTL[TL2Green ∧ (← TL2Queue)=0] := by
-        use i₀
-        simp [push_ltl, h_t_inf] at fact1 fact2 ⊢
-        constructor
-        · exact fact2 i₀ (by simp)
-        · exact fact1
-      -- Let n₀ be the earliest point that TL2Queue is 0
-      generalize h_is: {i | (t.shift (n+i) (by simp_all))⊨LLTL[TL2Green ∧ (← TL2Queue)=0]} = is
-      have h_is_nempty : is.Nonempty := by
-        simp_all [← h_is]
-        exact h_exists_i
-      have h_inf_mem_is := Nat.sInf_mem h_is_nempty
-      simp [← h_is] at h_inf_mem_is
-      simp [h_is] at h_inf_mem_is
-      simp [push_ltl] at h_inf_mem_is
-      -- Use n₀+1
-      use (sInf is) + 1
+      -- Use i₀+1
+      use (i₀) + 1
       simp [*]
       simp [push_ltl] at h4
-      specialize h4 (n + sInf is)
+      specialize h4 (n + i₀)
+      specialize fact2 i₀ (by simp)
+      simp [push_ltl, h_t_inf] at fact1
       simp [*] at h4
       obtain ⟨_, h4⟩ := h4
       ring_nf at h4 ⊢
@@ -232,7 +218,7 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
       have : ∃ i, (t.shift (n + i) (by simp_all)) ⊨ LLTL[(← TL1Queue) = 0] := by
         by_contra! h
         simp [push_ltl] at h
-        -- TL2Queue not zero for all time, so TL2Green must remain true
+        -- TL1Queue not zero for all time, so TL1Green must remain true
         have : ∀ i, (t.shift (n + i) (by simp_all)) ⊨ LLTL[TL1Green] := by
           intro i
           induction i with
@@ -276,28 +262,16 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
           convert h5.2 using 2
           ring_nf at *
           simp_all
-      -- Exists a timestep > n where TL2Queue is 0
-      have h_exists_i : ∃ i, (t.shift (n+i) (by simp_all)) ⊨ LLTL[TL1Green ∧ (← TL1Queue)=0] := by
-        use i₀
-        simp [push_ltl, h_t_inf] at fact1 fact2 ⊢
-        constructor
-        · exact fact2 i₀ (by simp)
-        · exact fact1
-      -- Let n₀ be the earliest point that TL2Queue is 0
-      generalize h_is: {i | (t.shift (n+i) (by simp_all))⊨LLTL[TL1Green ∧ (← TL1Queue)=0]} = is
-      have h_is_nempty : is.Nonempty := by
-        simp_all [← h_is]
-        exact h_exists_i
-      have h_inf_mem_is := Nat.sInf_mem h_is_nempty
-      simp [← h_is] at h_inf_mem_is
-      simp [h_is] at h_inf_mem_is
-      simp [push_ltl] at h_inf_mem_is
-      -- Use n₀+1
-      use (sInf is) + 1
+      -- Use i₀+1
+      use (i₀) + 1
       simp [*]
       simp [push_ltl] at h3
-      specialize h3 (n + sInf is) (by simp_all)
-      simp [h_inf_mem_is] at h3
+      specialize h3 (n + i₀)
+      specialize fact2 i₀ (by simp)
+      simp [push_ltl, h_t_inf] at fact1
+      specialize h_f_one_green (n+i₀) (by simp_all)
+      simp [fact2] at h_f_one_green
+      simp [*] at h3
       obtain ⟨_, h3⟩ := h3
       ring_nf at h3 ⊢
       simp_all
