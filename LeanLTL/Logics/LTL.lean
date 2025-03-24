@@ -2,7 +2,8 @@ import LeanLTL
 
 namespace LTL
 
--- TODO: Using wikipedia definitions here. Need to find a paper to cite.
+-- Definitions taken from "Handbook of model checking", Section 2.3.1 (without past-time operators)
+-- Note: Past-time operators add no expressive power to the logic (see source)
 def Var (σ: Type*) := σ -> Prop
 structure Trace (σ: Type*) where
   trace : LeanLTL.Trace σ
