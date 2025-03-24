@@ -35,16 +35,10 @@ namespace TraceSet
 
 @[simp] lemma toTraceSet_toFun (f : TraceSet σ) (c : Prop) : f.toFun.toTraceSet c = f := rfl
 
--- TODO should `toFun` be pushed inward or pushed outward?
 lemma map_toFun (f : TraceSet σ) (g : Prop → Prop) : f.toFun.map g = (f.map g).toFun := rfl
 
 lemma map₂_toFun (f f' : TraceSet σ) (g : Prop → Prop → Prop) :
     TraceFun.map₂ g f.toFun f'.toFun = (TraceSet.map₂ g f f').toFun := rfl
-
--- lemma toTraceSet_shift_toFun (f : TraceSet σ) (i : ℕ) :
---     (f.toFun.shift i).toTraceSetTrue = f.wshift i := by
---   ext
---   simp
 
 end TraceSet
 

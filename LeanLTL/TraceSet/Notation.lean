@@ -176,7 +176,6 @@ def termToTraceSet (stx : Term) : MacroM Term := do
 macro_rules
   | `(LLTL[$p]) => withRef p do
     match p with
-    -- todo: support full quantifier syntaxes
     | `(∃ $n:ident, $y) => `(TraceSet.exists fun $n => LLTL[$y])
     | `(∀ $n:ident, $y) => `(TraceSet.forall fun $n => LLTL[$y])
     /- Parentheses, Constants, and Base Cases -/

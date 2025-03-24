@@ -88,9 +88,6 @@ protected def TraceSet.exists (p : α → TraceSet σ) : TraceSet σ where
 protected def TraceSet.forall (p : α → TraceSet σ) : TraceSet σ where
   sat t := ∀ x, (t ⊨ p x)
 
-set_option pp.structureInstanceTypes true in
-#check (1,2,3)
-
 /-!
 #### Temporal operators
 -/
@@ -115,13 +112,10 @@ Strong shift.
 -/
 protected def TraceSet.sshift (f : TraceSet σ) (i : ℕ) : TraceSet σ where
   sat t := ∃ h : i < t.length, t.shift i h ⊨ f
--- TODO: thm for (f.toFun.shift i).fixFalseConvert
 
 protected abbrev TraceSet.wnext (f : TraceSet σ) : TraceSet σ := f.wshift 1
 protected abbrev TraceSet.snext (f : TraceSet σ) : TraceSet σ := f.sshift 1
 
--- TODO: @Daniel, do we want wshift for f₁ here?
--- TODO: Prove that f₁ can use strong shift instead, or maybe just normal shift?
 protected def TraceSet.until (f₁ f₂ : TraceSet σ) : TraceSet σ where
   sat t := ∃ n, (∀ i < n, t ⊨ f₁.wshift i) ∧ (t ⊨ f₂.sshift n)
 

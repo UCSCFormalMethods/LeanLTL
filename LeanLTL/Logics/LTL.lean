@@ -25,7 +25,6 @@ def sat {σ: Type*} (t: Trace σ) (f: Formula σ) : Prop :=
   | Formula.next f       =>
     let next_t := {
       trace := (t.trace.shift 1 (by
-        -- @ Kyle, can we reduce this to just simp?
         have := LeanLTL.Trace.infinite_lt_length t.trace t.infinite 1
         simp_all
       ))
