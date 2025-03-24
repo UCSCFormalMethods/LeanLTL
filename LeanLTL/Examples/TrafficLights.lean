@@ -14,15 +14,10 @@ open scoped LeanLTL.Notation
 
 -- Traffic Light Example
 structure ExState where
-  TL1Green : Prop
-  TL2Green : Prop
-
-  TL1Arrives : ℕ
-  TL1Departs : ℕ
-  TL2Arrives : ℕ
-  TL2Departs : ℕ
-  TL1Queue : ℕ
-  TL2Queue : ℕ
+  (TL1Red TL1Green : Prop)
+  (TL2Red TL2Green : Prop)
+  (TL1Arrives TL1Departs TL1Queue : ℕ)
+  (TL2Arrives TL2Departs TL2Queue : ℕ)
 
 abbrev TL1Green := TraceSet.of ExState.TL1Green
 abbrev TL2Green := TraceSet.of ExState.TL2Green
@@ -313,61 +308,3 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
     use h_n_1_tl
     have := h_f_one_green (n_1 + n) (by simp_all)
     simp_all
-
-namespace Teaser1
--- TODO: Teaser?
-abbrev v : TraceFun ℕ ℕ := TraceFun.proj0
-
-example : ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G ((← v) ≥ 5)] := by
-  simp +contextual [push_ltl]
-  intros t tinf hp0 hi n
-  induction n with
-  | zero => simp_all
-  | succ n ih =>
-    specialize hi n
-    simp only [add_comm] at *
-    rw [hi]
-    omega
-
-example : ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G (5 ≤ (← v))] := by
-  --rw [TraceSet.sem_entail_inf_iff]
-  rintro t hinf ⟨h1, h2⟩
-  apply TraceSet.globally_induction <;> simp_all [push_ltl]
-  omega
-
-end Teaser1
-
-example (σ : Type*) (p : σ → ℕ) :
-    let v := TraceFun.of p
-    ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G (5 ≤ (← v))] := by
-  rw [TraceSet.sem_entail_inf_iff]
-  rintro t hinf ⟨h1, h2⟩
-  apply TraceSet.globally_induction <;> simp_all [push_ltl]
-  omega
-
-example (σ : Type*) (p : σ → ℕ) :
-    let v := TraceFun.of p
-    ⊨ⁱ LLTL[((← v) = 5 ∧ G ((X (← v)) = ((← v) + 1))) → G (5 ≤ (← v))] := by
-  simp +contextual [push_ltl]
-  intro _ _ _ h n
-  induction n with
-  | zero => simp_all
-  | succ n ih =>
-    specialize h n
-    simp_all [add_comm]
-    omega
-
-noncomputable section
-namespace Teaser2
-axiom σ : Type*
-axiom p : σ → ℤ
-abbrev x : TraceFun σ ℤ := TraceFun.of p
-
-example : ⊨ⁱ LLTL[((← x) = 5 ∧ G ((X (← x)) = (← x) ^ 2)) → G (5 ≤ (← x))] := by
-  rw [TraceSet.sem_entail_inf_iff]
-  rintro t hinf ⟨h1, h2⟩
-  apply TraceSet.globally_induction <;> simp_all [push_ltl, hinf]
-  intros; nlinarith
-
-end Teaser2
-end
