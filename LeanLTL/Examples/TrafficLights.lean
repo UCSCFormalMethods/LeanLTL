@@ -164,10 +164,31 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
         specialize h9 (n + i) (this _)
         simp [TL2Queue]
         omega
+      let i₀ := by classical exact Nat.find this
+      have fact1 : (t.shift (n+i₀) (by simp_all)) ⊨ LLTL[(← TL2Queue) = 0] := by
+        classical
+        exact Nat.find_spec this
+      have fact2 : ∀ i ≤ i₀, (t.shift (n + i) (by simp_all)) ⊨ LLTL[TL2Green] := by
+        intro i
+        induction i with
+        | zero => simp_all
+        | succ i ih =>
+          intro h
+          specialize ih (by omega)
+          classical
+          have := Nat.find_min this h
+          simp [push_ltl, h_t_inf] at this
+          simp [push_ltl, h_t_inf] at h6
+          specialize h6 (n + i) ih this
+          convert h6.2 using 2
+          ring
       -- Exists a timestep > n where TL2Queue is 0
-      have h_exists_i : ∃ i, (t.shift (n+i) (by simp_all))⊨LLTL[TL2Green ∧ (← TL2Queue)=0] := by
-
-        sorry
+      have h_exists_i : ∃ i, (t.shift (n+i) (by simp_all)) ⊨ LLTL[TL2Green ∧ (← TL2Queue)=0] := by
+        use i₀
+        simp [push_ltl, h_t_inf] at fact1 fact2 ⊢
+        constructor
+        · exact fact2 i₀ (by simp)
+        · exact fact1
       -- Let n₀ be the earliest point that TL2Queue is 0
       generalize h_is: {i | (t.shift (n+i) (by simp_all))⊨LLTL[TL2Green ∧ (← TL2Queue)=0]} = is
       have h_is_nempty : is.Nonempty := by
