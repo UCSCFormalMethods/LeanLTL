@@ -14,8 +14,7 @@ open scoped LeanLTL.Notation
 
 -- Traffic Light Example
 structure ExState where
-  (TL1Red TL1Green : Prop)
-  (TL2Red TL2Green : Prop)
+  (TL1Green TL2Green : Prop)
   (TL1Arrives TL1Departs TL1Queue : ℕ)
   (TL2Arrives TL2Departs TL2Queue : ℕ)
 
@@ -59,7 +58,7 @@ abbrev TLBaseProperties := LLTL[TL1StartGreen ∧ TL2StartRed ∧ TL1ToTL2Green 
 
 -- Goal Properties
 abbrev G_OneLightGreen    := LLTL[G (TL1Green ↔ ¬TL2Green)]
-abbrev G_F_Green          := LLTL[G (F TL1Green) ∧ (G (F TL2Green))]
+abbrev G_F_Green          := LLTL[(G (F TL1Green)) ∧ (G (F TL2Green))]
 
 -- Example Proofs
 theorem Satisfies_G_OneLightGreen : TLBaseProperties ⇒ⁱ G_OneLightGreen := by
