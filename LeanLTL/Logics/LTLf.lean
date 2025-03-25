@@ -56,13 +56,13 @@ theorem equisat {σ: Type*} (f: Formula σ) (t: LTLf.Trace σ) :
   (LTLf.sat t f) ↔ (t.trace ⊨ (toLeanLTL f)) := by
   induction f generalizing t
   . rename_i v
-    simp [sat, toLeanLTL, push_fltl, LeanLTL.TraceSet.of]
+    simp [sat, toLeanLTL, push_ltl, LeanLTL.TraceSet.of]
   . rename_i f ih
-    simp_all [sat, toLeanLTL, push_fltl]
+    simp_all [sat, toLeanLTL, push_ltl]
   . rename_i f₁ f₂ ih₁ ih₂
-    simp_all [sat, toLeanLTL, push_fltl]
+    simp_all [sat, toLeanLTL, push_ltl]
   . rename_i f ih
-    simp only [sat, toLeanLTL, push_fltl]
+    simp only [sat, toLeanLTL, push_ltl]
     congr!
     rename_i h_tl
     specialize ih {
@@ -71,4 +71,42 @@ theorem equisat {σ: Type*} (f: Formula σ) (t: LTLf.Trace σ) :
     }
     simp_all
   . rename_i f₁ f₂ ih₁ ih₂
-    simp_all [sat, toLeanLTL, push_fltl]
+    simp_all [sat, toLeanLTL, push_ltl]
+
+/-!
+# Defining other logical connectives
+-/
+section Connectives
+
+open LeanLTL
+variable {σ : Type*}
+
+def Formula.true : Formula σ := Formula.var (fun _ => True)
+def Formula.false : Formula σ := Formula.var (fun _ => False)
+def Formula.or (f₁ f₂ : Formula σ) : Formula σ := (f₁.not.and f₂.not).not
+def Formula.imp (f₁ f₂ : Formula σ) : Formula σ := f₁.not.or f₂
+def Formula.eventually (f₁ : Formula σ) : Formula σ := Formula.true.until f₁
+def Formula.globally (f₁ : Formula σ) : Formula σ := f₁.not.eventually.not
+def Formula.weak_until (f₁ f₂ : Formula σ) : Formula σ := Formula.or (f₁.until f₂) f₁.globally
+
+variable {f₁ f₂ : Formula σ}
+
+theorem toLeanLTL_true : toLeanLTL (Formula.true : Formula σ) = TraceSet.true := rfl
+theorem toLeanLTL_false : toLeanLTL (Formula.false : Formula σ) = TraceSet.false := rfl
+theorem toLeanLTL_var {v : Var σ} : toLeanLTL (Formula.var v) = TraceSet.of v := rfl
+theorem toLeanLTL_not : toLeanLTL f₁.not = (toLeanLTL f₁).not := rfl
+theorem toLeanLTL_or : toLeanLTL (f₁.or f₂) = (toLeanLTL f₁).or (toLeanLTL f₂) := by
+  ext; simp [push_ltl, toLeanLTL, Formula.or]; tauto
+theorem toLeanLTL_and : toLeanLTL (f₁.and f₂) = (toLeanLTL f₁).and (toLeanLTL f₂) := rfl
+theorem toLeanLTL_imp : toLeanLTL (f₁.imp f₂) = (toLeanLTL f₁).imp (toLeanLTL f₂) := by
+  simp only [Formula.imp, toLeanLTL_or, toLeanLTL_not]
+  ext; simp [push_ltl]; tauto
+theorem toLeanLTL_next : toLeanLTL (Formula.next f₁) = (toLeanLTL f₁).snext := rfl
+theorem toLeanLTL_until : toLeanLTL (f₁.until f₂) = (toLeanLTL f₁).until (toLeanLTL f₂) := rfl
+theorem toLeanLTL_eventually : toLeanLTL f₁.eventually = (toLeanLTL f₁).finally := rfl
+theorem toLeanLTL_globally : toLeanLTL f₁.globally = (toLeanLTL f₁).globally := rfl
+theorem toLeanLTL_weak_until :
+    toLeanLTL (f₁.weak_until f₂) = ((toLeanLTL f₁).until (toLeanLTL f₂)).or (toLeanLTL f₁).globally := by
+  simp [Formula.weak_until, toLeanLTL_or, toLeanLTL_until, toLeanLTL_globally]
+
+end Connectives
