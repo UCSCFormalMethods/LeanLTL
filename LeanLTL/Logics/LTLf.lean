@@ -15,7 +15,7 @@ inductive Formula (σ: Type*) where
   | var (v: (Var σ))
   | not (f: Formula σ)
   | and (f₁ f₂: Formula σ)
-  | next (f: Formula σ)
+  | snext (f: Formula σ)
   | until (f₁ f₂: Formula σ)
 
 def sat {σ: Type*} (t: Trace σ) (f: Formula σ) : Prop :=
@@ -23,7 +23,7 @@ def sat {σ: Type*} (t: Trace σ) (f: Formula σ) : Prop :=
   | Formula.var v        => v (t.trace.toFun 0 (by simp))
   | Formula.not f        => ¬ (sat t f)
   | Formula.and f₁ f₂     => (sat t f₁) ∧ (sat t f₂)
-  | Formula.next f       =>
+  | Formula.snext f       =>
     ∃ (h_not_last: 1 < t.trace.length),
     let next_t := {
       trace := t.trace.shift 1 h_not_last
@@ -49,7 +49,7 @@ def toLeanLTL {σ: Type*} (f: Formula σ) : (LeanLTL.TraceSet σ) :=
   | Formula.var v        => LeanLTL.TraceSet.of v
   | Formula.not f        => LeanLTL.TraceSet.not (toLeanLTL f)
   | Formula.and f₁ f₂     => LeanLTL.TraceSet.and (toLeanLTL f₁) (toLeanLTL f₂)
-  | Formula.next f       => LeanLTL.TraceSet.snext (toLeanLTL f)
+  | Formula.snext f       => LeanLTL.TraceSet.snext (toLeanLTL f)
   | Formula.until f₁ f₂  => LeanLTL.TraceSet.until (toLeanLTL f₁) (toLeanLTL f₂)
 
 theorem equisat {σ: Type*} (f: Formula σ) (t: LTLf.Trace σ) :
@@ -85,6 +85,7 @@ def Formula.true : Formula σ := Formula.var (fun _ => True)
 def Formula.false : Formula σ := Formula.var (fun _ => False)
 def Formula.or (f₁ f₂ : Formula σ) : Formula σ := (f₁.not.and f₂.not).not
 def Formula.imp (f₁ f₂ : Formula σ) : Formula σ := f₁.not.or f₂
+def Formula.wnext (f₁ : Formula σ) : Formula σ := f₁.not.snext.not
 def Formula.eventually (f₁ : Formula σ) : Formula σ := Formula.true.until f₁
 def Formula.globally (f₁ : Formula σ) : Formula σ := f₁.not.eventually.not
 def Formula.weak_until (f₁ f₂ : Formula σ) : Formula σ := Formula.or (f₁.until f₂) f₁.globally
@@ -101,7 +102,10 @@ theorem toLeanLTL_and : toLeanLTL (f₁.and f₂) = (toLeanLTL f₁).and (toLean
 theorem toLeanLTL_imp : toLeanLTL (f₁.imp f₂) = (toLeanLTL f₁).imp (toLeanLTL f₂) := by
   simp only [Formula.imp, toLeanLTL_or, toLeanLTL_not]
   ext; simp [push_ltl]; tauto
-theorem toLeanLTL_next : toLeanLTL (Formula.next f₁) = (toLeanLTL f₁).snext := rfl
+theorem toLeanLTL_snext : toLeanLTL (Formula.snext f₁) = (toLeanLTL f₁).snext := rfl
+theorem toLeanLTL_wnext : toLeanLTL (Formula.wnext f₁) = (toLeanLTL f₁).wnext := by
+  simp only [Formula.wnext, toLeanLTL_not, toLeanLTL_snext]
+  ext t; simp [push_ltl]
 theorem toLeanLTL_until : toLeanLTL (f₁.until f₂) = (toLeanLTL f₁).until (toLeanLTL f₂) := rfl
 theorem toLeanLTL_eventually : toLeanLTL f₁.eventually = (toLeanLTL f₁).finally := rfl
 theorem toLeanLTL_globally : toLeanLTL f₁.globally = (toLeanLTL f₁).globally := rfl
