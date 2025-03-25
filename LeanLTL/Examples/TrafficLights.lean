@@ -48,6 +48,7 @@ abbrev TL2RedDeparts    := LLTL[G (¬TL2Green → ((← TL2Departs) = 0))]
 abbrev TL1ArrivesBounds := LLTL[G (0 ≤ (← TL1Arrives) ∧ (← TL1Arrives) ≤ max_arrives)]
 abbrev TL2ArrivesBounds := LLTL[G (0 ≤ (← TL2Arrives) ∧ (← TL2Arrives) ≤ max_arrives)]
 
+-- Note: Queues are defined as naturals, and so won't go negative if departures exceed queue size + arrivals
 abbrev TL1QueueNext     := LLTL[G ((X (← TL1Queue)) = (← TL1Queue) + (← TL1Arrives) - (← TL1Departs))]
 abbrev TL2QueueNext     := LLTL[G ((X (← TL2Queue)) = (← TL2Queue) + (← TL2Arrives) - (← TL2Departs))]
 
