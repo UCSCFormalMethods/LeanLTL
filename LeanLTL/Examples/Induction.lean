@@ -3,8 +3,7 @@ import LeanLTL
 open LeanLTL
 open scoped LeanLTL.Notation
 
-example {σ : Type} (p : σ → ℕ) :
-    let n := TraceFun.of p
+example {σ : Type} (n : σ → ℕ) :
     ⊨ⁱ LLTL[G ((←ˢ n) < (←ˢ X n)) → ∀ m, F (m < (←ˢ n))] := by
   simp +contextual [push_ltl]
   intros t ht hn x
@@ -20,8 +19,7 @@ example {σ : Type} (p : σ → ℕ) :
     use 1 + m
     omega
 
-example {σ : Type} (p : σ → ℕ) :
-    let n := TraceFun.of p;
+example {σ : Type} (n : σ → ℕ) :
     ⊨ LLTL[G ((← n) < (← X n)) → ∀ m, F (m < (←ʷ n))] := by
   simp +contextual [push_ltl]
   intro t ht n

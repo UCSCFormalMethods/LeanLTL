@@ -20,7 +20,7 @@ namespace LeanLTL
 
 namespace Notation
 
-open Lean
+open Lean Meta Elab Term
 
 /-- `Xˢ f` is *strong next* (`TraceSet.snext`). Requires that there is a next state in the trace. -/
 scoped prefix:100 "Xˢ " => TraceSet.snext
@@ -76,6 +76,35 @@ scoped syntax "LLTL[" term "]" : term
 scoped syntax "LLTLV[" term "]" : term
 
 /--
+Elaborates the term, coercing it to a trace set.
+-/
+elab "ensure_trace_set% " t:term : term => do
+  let e ← withSynthesizeLight <| elabTerm t none
+  let ty ← whnf (← inferType e)
+  if ty.isForall then
+    let fn ← mkConstWithFreshMVarLevels ``TraceSet.of
+    elabAppArgs fn #[] #[.expr e] none false false
+  else if ← Meta.isProp ty then
+    let fn ← mkConstWithFreshMVarLevels ``TraceSet.const
+    elabAppArgs fn #[] #[.expr e] none false false
+  else
+    -- TODO use ensureHasType
+    return e
+
+/--
+Elaborates the term, coercing it to a trace set.
+-/
+elab "ensure_trace_fun% " t:term : term => do
+  let e ← withSynthesizeLight <| elabTerm t none
+  let ty ← whnf (← inferType e)
+  if ty.isForall then
+    let fn ← mkConstWithFreshMVarLevels ``TraceFun.of
+    elabAppArgs fn #[] #[.expr e] none false false
+  else
+    -- TODO use ensureHasType
+    return e
+
+/--
 Pushes any `X` operators into strong/weak get operators.
 
 Example: `X ((←ˢ x) < 10)` becomes `(←ˢ X x) < 10`
@@ -129,7 +158,7 @@ partial def liftGets (stx : Term) : MacroM Term := do
   quantifiers.foldrM (init := stx) fun (strong, ref, x, n) stx => do
     let qname := if strong then ``TraceFun.sget else ``TraceFun.wget
     let q := mkIdentFrom ref qname (canonical := true)
-    `($q $x fun $n => $stx)
+    `($q LLTLV[$x] fun $n => $stx)
 where
   /--
   Descend into the expression, extracting strong/weak get operators, adding them to the state.
@@ -183,7 +212,7 @@ macro_rules
     | `(⊤)             => `(TraceSet.true)
     | `(⊥)             => `(TraceSet.false)
     -- Assume constants are TraceSet constants
-    | `($c:ident)      => `($c)
+    | `($c:ident)      => `(ensure_trace_set% $c)
     -- Process embedded nexts and gets and treat the result as a `Prop`.
     | _                => termToTraceSet p
 
@@ -198,7 +227,7 @@ macro_rules
     | `(($x))          => `(LLTLV[$x])
     | `($x:scientific) => `(TraceFun.const $x)
     | `($x:num)        => `(TraceFun.const $x)
-    | `($x)            => return x
+    | `($x)            => `(ensure_trace_fun% $x)
 
 def stripLLTL (stx : Term) : PrettyPrinter.UnexpandM Term := do
   match stx with
