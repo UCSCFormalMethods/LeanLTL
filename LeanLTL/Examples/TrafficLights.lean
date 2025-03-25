@@ -17,15 +17,7 @@ structure ExState where
   (TL1Green TL2Green : Prop)
   (TL1Arrives TL1Departs TL1Queue : ℕ)
   (TL2Arrives TL2Departs TL2Queue : ℕ)
-
-abbrev TL1Green := TraceSet.of ExState.TL1Green
-abbrev TL2Green := TraceSet.of ExState.TL2Green
-abbrev TL1Arrives := TraceFun.of ExState.TL1Arrives
-abbrev TL1Departs := TraceFun.of ExState.TL1Departs
-abbrev TL2Arrives := TraceFun.of ExState.TL2Arrives
-abbrev TL2Departs := TraceFun.of ExState.TL2Departs
-abbrev TL1Queue := TraceFun.of ExState.TL1Queue
-abbrev TL2Queue := TraceFun.of ExState.TL2Queue
+open ExState
 
 abbrev max_arrives : ℕ := 2
 abbrev max_departs : ℕ := 3
@@ -73,7 +65,7 @@ theorem Satisfies_G_OneLightGreen : TLBaseProperties ⇒ⁱ G_OneLightGreen := b
     tauto
   . simp [push_ltl, h_t_inf, TraceFun.eval_of_eq] at h3 h4 h5 h6 ⊢
     intro n hn
-    by_cases h : t.shift n (Trace.coe_lt_length_of_infinite h_t_inf n) ⊨ TL1Green
+    by_cases h : t.shift n (Trace.coe_lt_length_of_infinite h_t_inf n) ⊨ LLTL[TL1Green]
     · specialize h3 n h
       specialize h5 n h
       tauto
@@ -116,7 +108,7 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
   . simp [push_ltl]
     intro n h_n
     -- Discharge trivial case where light is currently green
-    by_cases (t.shift n h_n)⊨TL1Green
+    by_cases (t.shift n h_n)⊨LLTL[TL1Green]
     . use 0
       use (lt_tsub_iff_left.mpr h_n)
       simp_all
@@ -146,7 +138,7 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
             obtain ⟨_, _, h6⟩ := h6 (n + i) (by simp_all) ih (h i)
             convert h6 using 2
             ring
-        apply no_decreasing_nat_function (fun i => TL2Queue.eval! (t.shift (n + i) (by simp_all)))
+        apply no_decreasing_nat_function (fun i => LLTLV[TL2Queue].eval! (t.shift (n + i) (by simp_all)))
         intro i
         simp [push_ltl, h_t_inf] at h14
         specialize h14 (n + i)
@@ -198,7 +190,7 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
   . simp [push_ltl]
     intro n h_n
     -- Discharge trivial case where light is currently green
-    by_cases (t.shift n h_n)⊨TL2Green
+    by_cases (t.shift n h_n)⊨LLTL[TL2Green]
     . use 0
       use (lt_tsub_iff_left.mpr h_n)
       simp_all
@@ -229,7 +221,7 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
             convert h5 using 2
             ring_nf at *
             simp_all
-        apply no_decreasing_nat_function (fun i => TL1Queue.eval! (t.shift (n + i) (by simp_all)))
+        apply no_decreasing_nat_function (fun i => LLTLV[TL1Queue].eval! (t.shift (n + i) (by simp_all)))
         intro i
         simp [push_ltl, h_t_inf] at h13
         specialize h13 (n + i)
