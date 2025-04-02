@@ -22,6 +22,8 @@ namespace Notation
 
 open Lean Meta Elab Term
 
+open scoped symmDiff
+
 /-- `Xˢ f` is *strong next* (`TraceSet.snext`). Requires that there is a next state in the trace. -/
 scoped prefix:100 "Xˢ " => TraceSet.snext
 
@@ -84,7 +86,7 @@ elab "ensure_trace_set% " t:term : term => do
   if ty.isForall then
     let fn ← mkConstWithFreshMVarLevels ``TraceSet.of
     elabAppArgs fn #[] #[.expr e] none false false
-  else if ← Meta.isProp ty then
+  else if ← Meta.isProp e then
     let fn ← mkConstWithFreshMVarLevels ``TraceSet.const
     elabAppArgs fn #[] #[.expr e] none false false
   else
@@ -153,9 +155,9 @@ Assumption: `pushNexts` has already pushed all `X`'s into the strong/weak get op
 -/
 partial def liftGets (stx : Term) : MacroM Term := do
   let (stx, quantifiers) ← (go stx).run #[]
-  let stx ← ``(TraceSet.const $(⟨stx⟩))
+--  let stx ← ``(TraceSet.const $(⟨stx⟩))
   let quantifiers := quantifiers.filter (·.1) ++ quantifiers.filter (!·.1)
-  quantifiers.foldrM (init := stx) fun (strong, ref, x, n) stx => do
+  quantifiers.foldrM (init := ⟨stx⟩) fun (strong, ref, x, n) stx => do
     let qname := if strong then ``TraceFun.sget else ``TraceFun.wget
     let q := mkIdentFrom ref qname (canonical := true)
     `($q LLTLV[$x] fun $n => $stx)
@@ -206,17 +208,22 @@ macro_rules
   | `(LLTL[$p]) => withRef p do
     match p with
     -- todo: support full quantifier syntaxes
-    | `(∃ $n:ident, $y) => `(TraceSet.exists fun $n => LLTL[$y])
-    | `(∀ $n:ident, $y) => `(TraceSet.forall fun $n => LLTL[$y])
+    | `(∃ $n:ident, $y) => `((⨆ $n:ident, LLTL[$y] : TraceSet _))
+    | `(∀ $n:ident, $y) => `((⨅ $n:ident, LLTL[$y] : TraceSet _))
     /- Parentheses, Constants, and Base Cases -/
     | `(($p))          => `(LLTL[$p])
-    | `(⊤)             => `(TraceSet.true)
-    | `(⊥)             => `(TraceSet.false)
-    -- Assume constants are TraceSet constants
-    | `($c:ident)      => `(ensure_trace_set% $c)
-    | `($c:ident $xs*)      => `(ensure_trace_set% ($c $xs*))
+    | `(⊤)             => `((⊤ : TraceSet _))
+    | `(⊥)             => `((⊥ : TraceSet _))
+    | `($p → $q)       => `((LLTL[$p] ⇨ LLTL[$q] : TraceSet _))
+    | `($p ↔ $q)       => `((LLTL[$p] ⇔ LLTL[$q] : TraceSet _))
+    | `($p ∧ $q)       => `((LLTL[$p] ⊓ LLTL[$q] : TraceSet _))
+    | `($p ∨ $q)       => `((LLTL[$p] ⊔ LLTL[$q] : TraceSet _))
+    | `(¬ $p)          => `((LLTL[$p]ᶜ : TraceSet _))
+    -- -- Assume constants are TraceSet constants
+    -- | `($c:ident)      => `(ensure_trace_set% $c)
+    -- | `($c:ident $xs*) => `(ensure_trace_set% ($c $xs*))
     -- Process embedded nexts and gets and treat the result as a `Prop`.
-    | _                => termToTraceSet p
+    | _                => termToTraceSet <| ← `(ensure_trace_set% $p)
 
 macro_rules
   | `(LLTLV[$v]) => withRef v do
@@ -231,11 +238,11 @@ macro_rules
     | `($x:num)        => `(TraceFun.const $x)
     | `($x)            => `(ensure_trace_fun% $x)
 
-def stripLLTL (stx : Term) : PrettyPrinter.UnexpandM Term := do
+def stripLLTL (stx : Term) : Term :=
   match stx with
-  | `(LLTL[$x]) => return x
-  | `($c:ident) => return c
-  | _ => return stx
+  | `(LLTL[$x]) => x
+  | `($c:ident) => c
+  | _ => stx
 
 open scoped Elab.Command
 open Syntax
@@ -263,7 +270,7 @@ local macro "declare_lltl_notation " vars:ident* " : " ltl:term " => " t:term : 
   let macroRHS := Syntax.mkApp c macroRHSargs
   let unexpandLHS : Term := Syntax.mkApp (← `($$_:ident)) <| args.map (⟨antiquote vars ·⟩)
   let unexpandRHS ← `(`(LLTL[$macroLHS]))
-  let unexpandRHS ← vars.foldrM (init := unexpandRHS) fun var unexpandRHS => `((stripLLTL $var) >>= fun $var => $unexpandRHS)
+  let unexpandRHS ← vars.foldrM (init := unexpandRHS) fun var unexpandRHS => `(let $var:ident := stripLLTL $var; $unexpandRHS)
   `(
   macro_rules
     | `(LLTL[$macroLHS]) => `($macroRHS)
@@ -273,13 +280,6 @@ local macro "declare_lltl_notation " vars:ident* " : " ltl:term " => " t:term : 
     | _ => throw ()
   )
 
-/- Connectives and quantifiers -/
-declare_lltl_notation p q : p → q => TraceSet.imp p q
-declare_lltl_notation p q : p ↔ q => TraceSet.iff p q
-declare_lltl_notation p q : p ∧ q => TraceSet.and p q
-declare_lltl_notation p q : p ∨ q => TraceSet.or p q
-declare_lltl_notation p   : ¬ p   => TraceSet.not p
-
 /- Temporal Operators -/
 declare_lltl_notation p : Xˢ p => TraceSet.snext p
 declare_lltl_notation p : Xʷ p => TraceSet.wnext p
@@ -288,8 +288,58 @@ declare_lltl_notation p : G p  => TraceSet.globally p
 declare_lltl_notation p q : p U q => TraceSet.until p q
 declare_lltl_notation p q : p R q => TraceSet.release p q
 
+open PrettyPrinter Delaborator SubExpr
+
+@[scoped app_delab HImp.himp]
+def delab_himp : Delab := whenPPOption getPPNotation <| whenNotPPOption getPPExplicit do
+  let_expr HImp.himp ty _ _ _ := (← getExpr) | failure
+  let ty ← whnfR ty
+  guard <| ty.isAppOf ``TraceSet
+  let p := stripLLTL (← withAppFn <| withAppArg delab)
+  let q := stripLLTL (← withAppArg delab)
+  let stx ← annotateCurPos <| ← `($p → $q)
+  `(LLTL[$stx])
+
+@[scoped app_delab Min.min]
+def delab_inf : Delab := whenPPOption getPPNotation <| whenNotPPOption getPPExplicit do
+  let_expr Min.min ty _ _ _ := (← getExpr) | failure
+  let ty ← whnfR ty
+  guard <| ty.isAppOf ``TraceSet
+  let p := stripLLTL (← withAppFn <| withAppArg delab)
+  let q := stripLLTL (← withAppArg delab)
+  let stx ← annotateCurPos <| ← `($p ∧ $q)
+  `(LLTL[$stx])
+
+@[scoped app_delab Max.max]
+def delab_sup : Delab := whenPPOption getPPNotation <| whenNotPPOption getPPExplicit do
+  let_expr Max.max ty _ _ _ := (← getExpr) | failure
+  let ty ← whnfR ty
+  guard <| ty.isAppOf ``TraceSet
+  let p := stripLLTL (← withAppFn <| withAppArg delab)
+  let q := stripLLTL (← withAppArg delab)
+  let stx ← annotateCurPos <| ← `($p ∨ $q)
+  `(LLTL[$stx])
+
+@[scoped app_delab HasCompl.compl]
+def delab_compl : Delab := whenPPOption getPPNotation <| whenNotPPOption getPPExplicit do
+  let_expr HasCompl.compl ty _ _ := (← getExpr) | failure
+  let ty ← whnfR ty
+  guard <| ty.isAppOf ``TraceSet
+  let p := stripLLTL (← withAppArg delab)
+  let stx ← annotateCurPos <| ← `(¬$p)
+  `(LLTL[$stx])
+
 section Example
 variable {σ : Type} (p q : TraceSet σ) (x y : TraceFun σ Nat)
+
+/-- info: LLTL[p ∧ q] : TraceSet σ -/
+#guard_msgs in #check LLTL[p ∧ q]
+/-- info: LLTL[p ∨ q] : TraceSet σ -/
+#guard_msgs in #check LLTL[p ∨ q]
+/-- info: LLTL[¬p] : TraceSet σ -/
+#guard_msgs in #check LLTL[¬ p]
+/-- info: LLTL[p → q] : TraceSet σ -/
+#guard_msgs in #check LLTL[p → q]
 
 /-- info: LLTL[p → ¬q] : TraceSet σ -/
 #guard_msgs in #check LLTL[p → ¬ q]

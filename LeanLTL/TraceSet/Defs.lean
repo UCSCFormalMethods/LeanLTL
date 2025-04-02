@@ -88,8 +88,10 @@ protected def TraceSet.exists (p : α → TraceSet σ) : TraceSet σ where
 protected def TraceSet.forall (p : α → TraceSet σ) : TraceSet σ where
   sat t := ∀ x, (t ⊨ p x)
 
-set_option pp.structureInstanceTypes true in
-#check (1,2,3)
+protected def TraceSet.some (s : Set (TraceSet σ)) : TraceSet σ where
+  sat t := ∃ p ∈ s, (t ⊨ p)
+protected def TraceSet.all (s : Set (TraceSet σ)) : TraceSet σ where
+  sat t := ∀ p ∈ s, (t ⊨ p)
 
 /-!
 #### Temporal operators

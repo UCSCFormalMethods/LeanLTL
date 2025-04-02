@@ -96,7 +96,7 @@ lemma no_decreasing_nat_function (f : Nat → Nat) (h : ∀ n, f n > f (n + 1)) 
   intro
   apply h
 
-
+set_option maxHeartbeats 1000000 in
 theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
   simp [TLBaseProperties, TraceSet.sem_imp_inf_iff, TraceSet.sat_imp_iff]
   intro t h_t_inf h
@@ -138,7 +138,7 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
             obtain ⟨_, _, h6⟩ := h6 (n + i) (by simp_all) ih (h i)
             convert h6 using 2
             ring
-        apply no_decreasing_nat_function (fun i => LLTLV[TL2Queue].eval! (t.shift (n + i) (by simp_all)))
+        apply no_decreasing_nat_function (fun i => LLTLV[TL2Queue].eval! (t.shift (n + i) (by simp [h_t_inf])))
         intro i
         simp [push_ltl, h_t_inf] at h14
         specialize h14 (n + i)
