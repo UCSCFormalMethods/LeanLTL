@@ -337,13 +337,13 @@ lemma until_eq_not_release_not : f₁ 𝒰 f₂ = (f₁ᶜ ℛ f₂ᶜ)ᶜ := by
 lemma finally_eq_not_globally_not : 𝐅 f = (𝐆 fᶜ)ᶜ := by
   simp [not_globally]
 
-lemma globally_eq_not_finally_not : (𝐆 f) = (𝐅 fᶜ)ᶜ := by
+lemma globally_eq_not_finally_not : 𝐆 f = (𝐅 fᶜ)ᶜ := by
   simp [not_finally]
 
-lemma true_until : (⊤ : TraceSet σ) 𝒰 f = 𝐅 f := rfl
+lemma true_until : ⊤ 𝒰 f = 𝐅 f := rfl
 
 @[simp]
-lemma false_until : (⊥ : TraceSet σ) 𝒰 f = f := by
+lemma false_until : ⊥ 𝒰 f = f := by
   ext t
   simp only [push_ltl]
   simp only [imp_false, not_lt]
@@ -369,12 +369,12 @@ lemma until_true : f 𝒰 ⊤  = ⊤  := by
 lemma until_false : f 𝒰 ⊥ = ⊥ := by
   ext t; simp [push_ltl, iff_false]
 
-lemma false_release : (⊥ : TraceSet σ) ℛ f = 𝐆 f := by
+lemma false_release : ⊥ ℛ f = 𝐆 f := by
   rw [globally_eq_not_finally_not, ← true_until]
   simp [push_not_ltl]
 
 @[simp]
-lemma true_release : (⊤ : TraceSet σ) ℛ f = f := by
+lemma true_release : ⊤ ℛ f = f := by
   rw [release_eq_not_until_not, not_true, false_until, not_not]
 
 @[simp, neg_norm_ltl]
@@ -388,10 +388,10 @@ lemma release_false : f ℛ ⊥ = ⊥ := by
   simp
 
 @[neg_norm_ltl]
-lemma finally_eq_true_until : 𝐅 f = (⊤ : TraceSet σ) 𝒰 f := rfl
+lemma finally_eq_true_until : 𝐅 f = ⊤ 𝒰 f := rfl
 
 @[neg_norm_ltl]
-lemma globally_eq_false_release : 𝐆 f = (⊥ : TraceSet σ) ℛ f := by
+lemma globally_eq_false_release : 𝐆 f = ⊥ ℛ f := by
   rw [globally_eq_not_finally_not, finally_eq_true_until]
   simp [push_not_ltl]
 
@@ -461,7 +461,7 @@ lemma sshift_until (n : ℕ) : (f₁ 𝒰 f₂).sshift n = (f₁.sshift n) 𝒰 
 -- lemma wshift_until (n : ℕ) : (f₁.until f₂).wshift n = (f₁.wshift n).until (f₂.wshift n) := by
 --   sorry
 
-@[simp] theorem until_until : f₁ 𝒰 (f₁ 𝒰 f₂) = (f₁ 𝒰 f₂) := by
+@[simp] theorem until_until : f₁ 𝒰 (f₁ 𝒰 f₂) = f₁ 𝒰 f₂ := by
   ext t
   constructor
   · rw [sat_until_iff]
