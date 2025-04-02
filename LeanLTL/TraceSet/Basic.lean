@@ -78,11 +78,23 @@ instance : BooleanAlgebra (TraceSet σ) where
 ### Definition lemmas
 -/
 
-lemma release_eq : f₁.release f₂ = ((f₁ᶜ).until f₂ᶜ)ᶜ := rfl
+lemma release_eq : f₁ ℛ f₂ = (f₁ᶜ 𝒰 f₂ᶜ)ᶜ := rfl
 
-lemma finally_eq : f.finally = TraceSet.until ⊤ f := rfl
+lemma finally_eq : 𝐅 f = ⊤ 𝒰 f := rfl
 
-lemma globally_eq : f.globally = (TraceSet.finally fᶜ)ᶜ := rfl
+lemma globally_eq : 𝐆 f = (𝐅 fᶜ)ᶜ := rfl
+
+/-!
+### Notation normalization lemmas
+-/
+
+@[simp] lemma and_eq_inf : f₁.and f₂ = f₁ ⊓ f₂ := rfl
+@[simp] lemma or_eq_sup : f₁.or f₂ = f₁ ⊔ f₂ := rfl
+@[simp] lemma not_eq_compl : f.not = fᶜ := rfl
+@[simp] lemma until_eq_until : f₁.until f₂ = f₁ 𝒰 f₂ := rfl
+@[simp] lemma release_eq_release : f₁.release f₂ = f₁ ℛ f₂ := rfl
+@[simp] lemma finally_eq_finally : f.finally = 𝐅 f := rfl
+@[simp] lemma globally_eq_globally : f.globally = 𝐆 f := rfl
 
 /-!
 ### Semantics lemmas (lemmas about `⊨`)
@@ -131,24 +143,24 @@ open scoped symmDiff
     (t ⊨ f.sshift c) ↔ ∃ h : c < t.length, t.shift c h ⊨ f := Iff.rfl
 
 @[push_ltl] lemma sat_until_iff :
-    (t ⊨ f₁.until f₂) ↔ ∃ n, (∀ i < n, t ⊨ f₁.wshift i) ∧ (t ⊨ f₂.sshift n) := Iff.rfl
+    (t ⊨ f₁ 𝒰 f₂) ↔ ∃ n, (∀ i < n, t ⊨ f₁.wshift i) ∧ (t ⊨ f₂.sshift n) := Iff.rfl
 
 @[push_ltl] lemma sat_release_iff :
-    (t ⊨ f₁.release f₂) ↔ ∀ (n : ℕ), (∀ i < n, ¬ t ⊨ f₁.sshift i) → (t ⊨ f₂.wshift n) := by
+    (t ⊨ f₁ ℛ f₂) ↔ ∀ (n : ℕ), (∀ i < n, ¬ t ⊨ f₁.sshift i) → (t ⊨ f₂.wshift n) := by
   simp only [release_eq, push_ltl]
   simp
 
 /-- Alternative formulation of `sat_release_iff`, without negations. -/
 lemma sat_release_iff' :
-    (t ⊨ f₁.release f₂) ↔ ∀ (n : ℕ), (∃ i < n, t ⊨ f₁.sshift i) ∨ (t ⊨ f₂.wshift n) := by
+    (t ⊨ f₁ ℛ f₂) ↔ ∀ (n : ℕ), (∃ i < n, t ⊨ f₁.sshift i) ∨ (t ⊨ f₂.wshift n) := by
   simp only [sat_release_iff, imp_iff_not_or]
   push_neg
   rfl
 
-@[push_ltl] theorem sat_finally_iff : (t ⊨ f.finally) ↔ ∃ n, t ⊨ f.sshift n := by
+@[push_ltl] theorem sat_finally_iff : (t ⊨ 𝐅 f) ↔ ∃ n, t ⊨ f.sshift n := by
   simp [finally_eq, push_ltl]
 
-@[push_ltl] theorem sat_globally_iff : (t ⊨ f.globally) ↔ ∀ n, t ⊨ f.wshift n := by
+@[push_ltl] theorem sat_globally_iff : (t ⊨ 𝐆 f) ↔ ∀ n, t ⊨ f.wshift n := by
   simp [globally_eq, push_ltl]
 
 @[push_ltl] theorem sat_sget_iff (f : TraceFun σ α) (p : α → TraceSet σ) : (t ⊨ f.sget p) ↔ ∃ x, f t = some x ∧ (t ⊨ p x) := by
@@ -235,9 +247,9 @@ lemma not_sshift (n : ℕ) : (f.sshift n)ᶜ = fᶜ.wshift n := by ext t; simp [
 @[push_not_ltl, neg_norm_ltl]
 lemma not_wshift (n : ℕ) : (f.wshift n)ᶜ = fᶜ.sshift n := by ext t; simp [push_ltl]
 
-@[push_not_ltl] lemma not_finally : f.finallyᶜ = fᶜ.globally := by ext t; simp [push_ltl]
+@[push_not_ltl] lemma not_finally : (𝐅 f)ᶜ = 𝐆 fᶜ := by ext t; simp [push_ltl]
 
-@[push_not_ltl] lemma not_globally : f.globallyᶜ = fᶜ.finally := by ext t; simp [push_ltl]
+@[push_not_ltl] lemma not_globally : (𝐆 f)ᶜ = 𝐅 fᶜ := by ext t; simp [push_ltl]
 
 @[push_not_ltl, neg_norm_ltl]
 lemma not_and : (f₁ ⊓ f₂)ᶜ = f₁ᶜ ⊔ f₂ᶜ := by ext t; simp [push_ltl, imp_iff_not_or]
@@ -246,10 +258,10 @@ lemma not_and : (f₁ ⊓ f₂)ᶜ = f₁ᶜ ⊔ f₂ᶜ := by ext t; simp [push
 lemma not_or : (f₁ ⊔ f₂)ᶜ = f₁ᶜ ⊓ f₂ᶜ := by ext t; simp [push_ltl]
 
 @[push_not_ltl, neg_norm_ltl]
-lemma not_until : (f₁.until f₂)ᶜ = f₁ᶜ.release f₂ᶜ := by simp [release_eq]
+lemma not_until : (f₁ 𝒰 f₂)ᶜ = f₁ᶜ ℛ f₂ᶜ := by simp [release_eq]
 
 @[push_not_ltl, neg_norm_ltl]
-lemma not_release : (f₁.release f₂)ᶜ = f₁ᶜ.until f₂ᶜ := by simp [release_eq]
+lemma not_release : (f₁ ℛ f₂)ᶜ = f₁ᶜ 𝒰 f₂ᶜ := by simp [release_eq]
 
 @[neg_norm_ltl]
 lemma not_inj_iff : f₁ᶜ = f₂ᶜ ↔ f₁ = f₂ := compl_inj_iff
@@ -317,21 +329,21 @@ lemma wshift_true (n : ℕ) : (⊤ : TraceSet σ).wshift n = ⊤ := by
 lemma sshift_false (n : ℕ) : (⊥ : TraceSet σ).sshift n = ⊥ := by
   ext t; simp [push_ltl]
 
-lemma release_eq_not_until_not : f₁.release f₂ = (f₁ᶜ.until f₂ᶜ)ᶜ := rfl
+lemma release_eq_not_until_not : f₁ ℛ f₂ = (f₁ᶜ 𝒰 f₂ᶜ)ᶜ := rfl
 
-lemma until_eq_not_release_not : f₁.until f₂ = (f₁ᶜ.release f₂ᶜ)ᶜ := by
+lemma until_eq_not_release_not : f₁ 𝒰 f₂ = (f₁ᶜ ℛ f₂ᶜ)ᶜ := by
   simp [release_eq_not_until_not]
 
-lemma finally_eq_not_globally_not : f.finally = fᶜ.globallyᶜ := by
+lemma finally_eq_not_globally_not : 𝐅 f = (𝐆 fᶜ)ᶜ := by
   simp [not_globally]
 
-lemma globally_eq_not_finally_not : f.globally = fᶜ.finallyᶜ := by
+lemma globally_eq_not_finally_not : (𝐆 f) = (𝐅 fᶜ)ᶜ := by
   simp [not_finally]
 
-lemma true_until : (⊤ : TraceSet σ).until f = f.finally := rfl
+lemma true_until : (⊤ : TraceSet σ) 𝒰 f = 𝐅 f := rfl
 
 @[simp]
-lemma false_until : (⊥ : TraceSet σ).until f = f := by
+lemma false_until : (⊥ : TraceSet σ) 𝒰 f = f := by
   ext t
   simp only [push_ltl]
   simp only [imp_false, not_lt]
@@ -347,64 +359,64 @@ lemma false_until : (⊥ : TraceSet σ).until f = f := by
     simp [h]
 
 @[simp, neg_norm_ltl]
-lemma until_true : f.until ⊤  = ⊤  := by
+lemma until_true : f 𝒰 ⊤  = ⊤  := by
   ext t
   simp only [push_ltl, iff_true]
   use 0
   simp
 
 @[simp, neg_norm_ltl]
-lemma until_false : f.until ⊥ = ⊥ := by
+lemma until_false : f 𝒰 ⊥ = ⊥ := by
   ext t; simp [push_ltl, iff_false]
 
-lemma false_release : (⊥ : TraceSet σ).release f = f.globally := by
+lemma false_release : (⊥ : TraceSet σ) ℛ f = 𝐆 f := by
   rw [globally_eq_not_finally_not, ← true_until]
   simp [push_not_ltl]
 
 @[simp]
-lemma true_release : (⊤ : TraceSet σ).release f = f := by
+lemma true_release : (⊤ : TraceSet σ) ℛ f = f := by
   rw [release_eq_not_until_not, not_true, false_until, not_not]
 
 @[simp, neg_norm_ltl]
-lemma release_true : f.release ⊤  = ⊤  := by
+lemma release_true : f ℛ ⊤  = ⊤  := by
   rw [release_eq_not_until_not]
   simp
 
 @[simp, neg_norm_ltl]
-lemma release_false : f.release ⊥ = ⊥ := by
+lemma release_false : f ℛ ⊥ = ⊥ := by
   rw [release_eq_not_until_not]
   simp
 
 @[neg_norm_ltl]
-lemma finally_eq_true_until : f.finally = (⊤ : TraceSet σ).until f := rfl
+lemma finally_eq_true_until : 𝐅 f = (⊤ : TraceSet σ) 𝒰 f := rfl
 
 @[neg_norm_ltl]
-lemma globally_eq_false_release : f.globally = (⊥ : TraceSet σ).release f := by
+lemma globally_eq_false_release : 𝐆 f = (⊥ : TraceSet σ) ℛ f := by
   rw [globally_eq_not_finally_not, finally_eq_true_until]
   simp [push_not_ltl]
 
 @[simp]
-lemma globally_true : (⊤ : TraceSet σ).globally = ⊤ := by
+lemma globally_true : 𝐆 (⊤ : TraceSet σ) = ⊤ := by
   simp [globally_eq_false_release]
 
 @[simp]
-lemma globally_false : (⊥ : TraceSet σ).globally = ⊥ := by
+lemma globally_false : 𝐆 (⊥ : TraceSet σ) = ⊥ := by
   simp [globally_eq_false_release]
 
 @[simp]
-lemma finally_true : (⊤ : TraceSet σ).finally = ⊤ := by
+lemma finally_true : 𝐅 (⊤ : TraceSet σ) = ⊤ := by
   simp [finally_eq_true_until]
 
 @[simp]
-lemma finally_false : (⊥ : TraceSet σ).finally = ⊥ := by
+lemma finally_false : 𝐅 (⊥ : TraceSet σ) = ⊥ := by
   simp [finally_eq_true_until]
 
-theorem sat_finally_of (h : t ⊨ f) : t ⊨ f.finally := by
+theorem sat_finally_of (h : t ⊨ f) : t ⊨ 𝐅 f := by
   rw [sat_finally_iff]
   use 0
   simpa
 
-lemma sshift_until (n : ℕ) : (f₁.until f₂).sshift n = (f₁.sshift n).until (f₂.sshift n) := by
+lemma sshift_until (n : ℕ) : (f₁ 𝒰 f₂).sshift n = (f₁.sshift n) 𝒰 (f₂.sshift n) := by
   ext t
   simp [push_ltl]
   constructor
@@ -449,7 +461,7 @@ lemma sshift_until (n : ℕ) : (f₁.until f₂).sshift n = (f₁.sshift n).unti
 -- lemma wshift_until (n : ℕ) : (f₁.until f₂).wshift n = (f₁.wshift n).until (f₂.wshift n) := by
 --   sorry
 
-@[simp] theorem until_until : f₁.until (f₁.until f₂) = (f₁.until f₂) := by
+@[simp] theorem until_until : f₁ 𝒰 (f₁ 𝒰 f₂) = (f₁ 𝒰 f₂) := by
   ext t
   constructor
   · rw [sat_until_iff]
@@ -479,16 +491,16 @@ lemma sshift_until (n : ℕ) : (f₁.until f₂).sshift n = (f₁.sshift n).unti
     simp
     use n, h1, h2
 
-lemma wshift_release (n : ℕ) : (f₁.release f₂).wshift n = (f₁.wshift n).release (f₂.wshift n) := by
+lemma wshift_release (n : ℕ) : (f₁ ℛ f₂).wshift n = (f₁.wshift n) ℛ (f₂.wshift n) := by
   rw [release_eq_not_until_not, ← not_sshift, sshift_until, release_eq_not_until_not, not_wshift, not_wshift]
 
-@[simp] theorem release_release : f₁.release (f₁.release f₂) = (f₁.release f₂) := by
+@[simp] theorem release_release : f₁ ℛ (f₁ ℛ f₂) = f₁ ℛ f₂ := by
   simp [release_eq_not_until_not]
 
-@[simp] theorem finally_finally : f.finally.finally = f.finally := by
+@[simp] theorem finally_finally : 𝐅 𝐅 f = 𝐅 f := by
   ext t; simp [finally_eq]
 
-@[simp] theorem globally_globally : f.globally.globally = f.globally := by
+@[simp] theorem globally_globally : 𝐆 𝐆 f = 𝐆 f := by
   simp [globally_eq]
 
 /-!
@@ -507,10 +519,10 @@ lemma sshift_and_distrib (n : ℕ) : (f₁ ⊓ f₂).sshift n = (f₁.sshift n) 
 lemma sshift_or_distrib (n : ℕ) : (f₁ ⊔ f₂).sshift n = (f₁.sshift n) ⊔ (f₂.sshift n) := by
   ext t; by_cases n < t.length <;> simp [push_ltl, *]
 
-lemma until_or_distrib : f₁.until (f₂ ⊔ f₃) = (f₁.until f₂) ⊔ (f₁.until f₃) := by
+lemma until_or_distrib : f₁ 𝒰 (f₂ ⊔ f₃) = (f₁ 𝒰 f₂) ⊔ (f₁ 𝒰 f₃) := by
   ext t; simp only [push_ltl, exists_or, ← exists_or, ← and_or_left]
 
-lemma and_until_distrib : (f₁ ⊓ f₂).until f₃ = (f₁.until f₃) ⊓ (f₂.until f₃) := by
+lemma and_until_distrib : (f₁ ⊓ f₂) 𝒰 f₃ = (f₁ 𝒰 f₃) ⊓ (f₂ 𝒰 f₃) := by
   ext t
   simp only [push_ltl]
   constructor
@@ -528,16 +540,16 @@ lemma and_until_distrib : (f₁ ⊓ f₂).until f₃ = (f₁.until f₃) ⊓ (f�
       have : i < n := by linarith
       simp_all
 
-lemma release_and_distrib : f₁.release (f₂ ⊓ f₃) = (f₁.release f₂) ⊓ (f₁.release f₃) := by
+lemma release_and_distrib : f₁ ℛ (f₂ ⊓ f₃) = (f₁ ℛ f₂) ⊓ (f₁ ℛ f₃) := by
   simp [release_eq, not_or, not_and, until_or_distrib]
 
-lemma or_release_distrib : (f₁ ⊔ f₂).release f₃ = (f₁.release f₃) ⊔ (f₂.release f₃) := by
+lemma or_release_distrib : (f₁ ⊔ f₂) ℛ f₃ = (f₁ ℛ f₃) ⊔ (f₂ ℛ f₃) := by
   simp [release_eq, not_or, not_and, and_until_distrib]
 
-lemma finally_or_distrib : (f₁ ⊔ f₂).finally = f₁.finally ⊔ f₂.finally := by
+lemma finally_or_distrib : 𝐅 (f₁ ⊔ f₂) = 𝐅 f₁ ⊔ 𝐅 f₂ := by
   ext t; simp [push_ltl, exists_or]
 
-lemma globally_and_distrib : (f₁ ⊓ f₂).globally = f₁.globally ⊓ f₂.globally := by
+lemma globally_and_distrib : 𝐆 (f₁ ⊓ f₂) = 𝐆 f₁ ⊓ 𝐆 f₂ := by
   ext t; simp [push_ltl, forall_and]
 
 /-!
@@ -559,33 +571,33 @@ theorem wnext_mono (h : f₁ ⇒ f₂) : f₁.wnext ⇒ f₂.wnext := by
   intro _ h' h''
   exact h _ (h' h'')
 
-theorem globally_mono (h : f₁ ⇒ f₂) : f₁.globally ⇒ f₂.globally := by
+theorem globally_mono (h : f₁ ⇒ f₂) : 𝐆 f₁ ⇒ 𝐆 f₂ := by
   simp only [sem_imp_iff, sat_imp_iff, sat_globally_iff, sat_wshift_iff]
   intro _ h'
   peel h'
   exact h _ this
 
-theorem finally_mono (h : f₁ ⇒ f₂) : f₁.finally ⇒ f₂.finally := by
+theorem finally_mono (h : f₁ ⇒ f₂) : 𝐅 f₁ ⇒ 𝐅 f₂ := by
   rw [finally_eq_not_globally_not, finally_eq_not_globally_not]
   apply not_anti
   apply globally_mono
   apply not_anti h
 
-theorem sat_globally_imp_of (h : t ⊨ (f₁ ⇨ f₂).globally) : t ⊨ f₁.globally ⇨ f₂.globally := by
+theorem sat_globally_imp_of (h : t ⊨ 𝐆 (f₁ ⇨ f₂)) : t ⊨ 𝐆 f₁ ⇨ 𝐆 f₂ := by
   simp only [sat_globally_iff, sat_wshift_iff, sat_imp_iff] at h ⊢
   intro h1 _ _
   apply h
   apply h1
 
-theorem sat_finally_imp_finally_of (h : t ⊨ (f₁ ⇨ f₂).globally) : t ⊨ f₁.finally ⇨ f₂.finally := by
+theorem sat_finally_imp_finally_of (h : t ⊨ 𝐆 (f₁ ⇨ f₂)) : t ⊨ 𝐅 f₁ ⇨ 𝐅 f₂ := by
   simp only [sat_globally_iff, sat_wshift_iff, sat_imp_iff, sat_finally_iff, sat_sshift_iff,
     forall_exists_index] at h ⊢
   intro n hn h2
   refine ⟨_, _, h n hn h2⟩
 
-theorem sat_finally_imp_of (h : t ⊨ f₁.finally ⇨ f₂.finally) : t ⊨ (f₁ ⇨ f₂).finally := by
+theorem sat_finally_imp_of (h : t ⊨ 𝐅 f₁ ⇨ 𝐅 f₂) : t ⊨ 𝐅 (f₁ ⇨ f₂) := by
   simp only [sat_imp_iff, sat_finally_iff, sat_sshift_iff, forall_exists_index] at h ⊢
-  by_cases h' : t ⊨ f₂.finally
+  by_cases h' : t ⊨ 𝐅 f₂
   · simp only [sat_finally_iff, sat_sshift_iff] at h'
     obtain ⟨n, hn, h'⟩ := h'
     use n, hn
@@ -597,7 +609,7 @@ theorem sat_finally_imp_of (h : t ⊨ f₁.finally ⇨ f₂.finally) : t ⊨ (f�
     use 0
     simp [h]
 
-theorem sat_finally_imp_of_finally_imp (h : t ⊨ f₁.finally ⇨ f₂.globally) : t ⊨ (f₁ ⇨ f₂).globally := by
+theorem sat_finally_imp_of_finally_imp (h : t ⊨ 𝐅 f₁ ⇨ 𝐆 f₂) : t ⊨ 𝐆 (f₁ ⇨ f₂) := by
   simp only [sat_imp_iff, sat_finally_iff, sat_sshift_iff, sat_globally_iff, sat_wshift_iff,
     forall_exists_index] at h ⊢
   intro n _ h'
@@ -608,7 +620,7 @@ theorem sat_finally_imp_of_finally_imp (h : t ⊨ f₁.finally ⇨ f₂.globally
 -/
 
 theorem until_eq_or_and :
-    f₁.until f₂ = f₂ ⊔ (f₁ ⊓ (f₁.until f₂).snext) := by
+    f₁ 𝒰 f₂ = f₂ ⊔ (f₁ ⊓ (f₁ 𝒰 f₂).snext) := by
   ext t
   cases t using Trace.unshift_cases with
   | singleton =>
@@ -645,16 +657,16 @@ theorem until_eq_or_and :
         | succ n => simp; apply h3; omega
 
 theorem release_eq_and_or :
-    f₁.release f₂ = f₂ ⊓ (f₁ ⊔ (f₁.release f₂).wnext) := by
+    f₁ ℛ f₂ = f₂ ⊓ (f₁ ⊔ (f₁ ℛ f₂).wnext) := by
   conv_lhs =>
     rw [release_eq_not_until_not, until_eq_or_and]
     simp only [push_not_ltl]
 
-theorem finally_eq_or_finally : f.finally = f ⊔ f.finally.snext := by
+theorem finally_eq_or_finally : 𝐅 f = f ⊔ (𝐅 f).snext := by
   conv_lhs =>
     rw [finally_eq, until_eq_or_and, ← finally_eq, top_inf_eq]
 
-theorem globally_eq_and_globally : f.globally = f ⊓ f.globally.wnext := by
+theorem globally_eq_and_globally : 𝐆 f = f ⊓ (𝐆 f).wnext := by
   conv_lhs =>
     rw [globally_eq, finally_eq_or_finally]
     simp [push_not_ltl]
@@ -664,16 +676,16 @@ theorem globally_eq_and_globally : f.globally = f ⊓ f.globally.wnext := by
 -/
 
 lemma unshift_sat_globally_iff (s : σ) :
-    (Trace.unshift s t ⊨ TraceSet.globally f) ↔ (Trace.unshift s t ⊨ f) ∧ (t ⊨ TraceSet.globally f) := by
+    (Trace.unshift s t ⊨ 𝐆 f) ↔ (Trace.unshift s t ⊨ f) ∧ (t ⊨ 𝐆 f) := by
   rw (occs := [1]) [globally_eq_and_globally]
   simp [push_ltl]
 
 /--
-Induction principle for proving `t ⊨ .globally p`.
+Induction principle for proving `t ⊨ 𝐆 p`.
 -/
 theorem globally_induction {p : TraceSet σ} (t : Trace σ)
-    (base : t ⊨ p) (step : t ⊨ .globally (p ⇨ p.wnext)) :
-    t ⊨ .globally p := by
+    (base : t ⊨ p) (step : t ⊨ 𝐆 (p ⇨ p.wnext)) :
+    t ⊨ 𝐆 p := by
   simp [push_ltl]
   intro n h_n
   induction n

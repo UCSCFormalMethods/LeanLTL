@@ -27,22 +27,22 @@ abbrev max_departs : ℕ := 3
 abbrev TL1StartGreen    := LLTL[TL1Green]
 abbrev TL2StartRed      := LLTL[¬TL2Green]
 
-abbrev TL1ToTL2Green    := LLTL[G ((TL1Green ∧ ((← TL1Queue) = 0)) → (Xˢ (¬TL1Green ∧ TL2Green)))]
-abbrev TL2ToTL1Green    := LLTL[G ((TL2Green ∧ ((← TL2Queue) = 0)) → (Xˢ (TL1Green ∧ ¬ TL2Green)))]
-abbrev TL1StayGreen     := LLTL[G ((TL1Green ∧ ((← TL1Queue) ≠ 0)) → (Xˢ (TL1Green ∧ ¬ TL2Green)))]
-abbrev TL2StayGreen     := LLTL[G ((TL2Green ∧ ((← TL2Queue) ≠ 0)) → (Xˢ (¬ TL1Green ∧ TL2Green)))]
+abbrev TL1ToTL2Green    := LLTL[𝐆 ((TL1Green ∧ ((← TL1Queue) = 0)) → (Xˢ (¬TL1Green ∧ TL2Green)))]
+abbrev TL2ToTL1Green    := LLTL[𝐆 ((TL2Green ∧ ((← TL2Queue) = 0)) → (Xˢ (TL1Green ∧ ¬ TL2Green)))]
+abbrev TL1StayGreen     := LLTL[𝐆 ((TL1Green ∧ ((← TL1Queue) ≠ 0)) → (Xˢ (TL1Green ∧ ¬ TL2Green)))]
+abbrev TL2StayGreen     := LLTL[𝐆 ((TL2Green ∧ ((← TL2Queue) ≠ 0)) → (Xˢ (¬ TL1Green ∧ TL2Green)))]
 
-abbrev TL1GreenDeparts  := LLTL[G (TL1Green → ((← TL1Departs) = max_departs))]
-abbrev TL1RedDeparts    := LLTL[G (¬TL1Green → ((← TL1Departs) = 0))]
-abbrev TL2GreenDeparts  := LLTL[G (TL2Green → ((← TL2Departs) = max_departs))]
-abbrev TL2RedDeparts    := LLTL[G (¬TL2Green → ((← TL2Departs) = 0))]
+abbrev TL1GreenDeparts  := LLTL[𝐆 (TL1Green → ((← TL1Departs) = max_departs))]
+abbrev TL1RedDeparts    := LLTL[𝐆 (¬TL1Green → ((← TL1Departs) = 0))]
+abbrev TL2GreenDeparts  := LLTL[𝐆 (TL2Green → ((← TL2Departs) = max_departs))]
+abbrev TL2RedDeparts    := LLTL[𝐆 (¬TL2Green → ((← TL2Departs) = 0))]
 
-abbrev TL1ArrivesBounds := LLTL[G (0 ≤ (← TL1Arrives) ∧ (← TL1Arrives) ≤ max_arrives)]
-abbrev TL2ArrivesBounds := LLTL[G (0 ≤ (← TL2Arrives) ∧ (← TL2Arrives) ≤ max_arrives)]
+abbrev TL1ArrivesBounds := LLTL[𝐆 (0 ≤ (← TL1Arrives) ∧ (← TL1Arrives) ≤ max_arrives)]
+abbrev TL2ArrivesBounds := LLTL[𝐆 (0 ≤ (← TL2Arrives) ∧ (← TL2Arrives) ≤ max_arrives)]
 
 -- Note: Queues are defined as naturals, and so won't go negative if departures exceed queue size + arrivals
-abbrev TL1QueueNext     := LLTL[G ((X (← TL1Queue)) = (← TL1Queue) + (← TL1Arrives) - (← TL1Departs))]
-abbrev TL2QueueNext     := LLTL[G ((X (← TL2Queue)) = (← TL2Queue) + (← TL2Arrives) - (← TL2Departs))]
+abbrev TL1QueueNext     := LLTL[𝐆 ((X (← TL1Queue)) = (← TL1Queue) + (← TL1Arrives) - (← TL1Departs))]
+abbrev TL2QueueNext     := LLTL[𝐆 ((X (← TL2Queue)) = (← TL2Queue) + (← TL2Arrives) - (← TL2Departs))]
 
 abbrev TLBaseProperties := LLTL[TL1StartGreen ∧ TL2StartRed ∧ TL1ToTL2Green ∧ TL2ToTL1Green
                             ∧ TL1StayGreen ∧ TL2StayGreen ∧ TL1GreenDeparts ∧ TL1RedDeparts
@@ -50,8 +50,8 @@ abbrev TLBaseProperties := LLTL[TL1StartGreen ∧ TL2StartRed ∧ TL1ToTL2Green 
                             ∧ TL1QueueNext ∧ TL2QueueNext]
 
 -- Goal Properties
-abbrev G_OneLightGreen    := LLTL[G (TL1Green ↔ ¬TL2Green)]
-abbrev G_F_Green          := LLTL[(G (F TL1Green)) ∧ (G (F TL2Green))]
+abbrev G_OneLightGreen    := LLTL[𝐆 (TL1Green ↔ ¬TL2Green)]
+abbrev G_F_Green          := LLTL[(𝐆 (𝐅 TL1Green)) ∧ (𝐆 (𝐅 TL2Green))]
 
 -- Example Proofs
 theorem Satisfies_G_OneLightGreen : TLBaseProperties ⇒ⁱ G_OneLightGreen := by
@@ -123,7 +123,7 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
     simp [h_not_green] at h_other_green
 
     -- Establish that the other light must eventually be red
-    have h_f_other_red : (t.shift n h_n) ⊨ LLTL[F (¬TL2Green)] := by
+    have h_f_other_red : (t.shift n h_n) ⊨ LLTL[𝐅 (¬TL2Green)] := by
       simp [push_ltl]
       have : ∃ i, (t.shift (n + i) (by simp_all)) ⊨ LLTL[(← TL2Queue) = 0] := by
         by_contra! h
@@ -205,7 +205,7 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
     simp [h_not_green] at h_other_green
 
     -- Establish that the other light must eventually be red
-    have h_f_other_red : (t.shift n h_n) ⊨ LLTL[F (¬TL1Green)] := by
+    have h_f_other_red : (t.shift n h_n) ⊨ LLTL[𝐅 (¬TL1Green)] := by
       simp [push_ltl]
       have : ∃ i, (t.shift (n + i) (by simp_all)) ⊨ LLTL[(← TL1Queue) = 0] := by
         by_contra! h

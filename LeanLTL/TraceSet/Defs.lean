@@ -1,5 +1,6 @@
 import LeanLTL.Trace.Defs
 import LeanLTL.TraceFun.Defs
+import LeanLTL.Logics.Notation
 
 /-!
 # Sets of traces
@@ -132,4 +133,9 @@ protected def TraceSet.release (f₁ f₂ : TraceSet σ) : TraceSet σ :=
 
 protected def TraceSet.finally (f : TraceSet σ) : TraceSet σ := TraceSet.true.until f
 
-protected def TraceSet.globally (f: TraceSet σ) : TraceSet σ := f.not.finally.not
+protected def TraceSet.globally (f : TraceSet σ) : TraceSet σ := f.not.finally.not
+
+instance : HasFinally (TraceSet σ) := ⟨TraceSet.finally⟩
+instance : HasGlobally (TraceSet σ) := ⟨TraceSet.globally⟩
+instance : HasUntil (TraceSet σ) := ⟨TraceSet.until⟩
+instance : HasRelease (TraceSet σ) := ⟨TraceSet.release⟩

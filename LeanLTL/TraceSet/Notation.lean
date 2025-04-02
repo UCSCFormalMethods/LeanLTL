@@ -47,30 +47,6 @@ uses `TraceFun.wget`.
 -/
 scoped syntax:min "←ʷ " term : term
 
-/--
-`f U g` is *until* (`TraceSet.until`).
-True if there is a point at which a strong shift makes `g` true,
-and all shifts of `f` until that point are true.
-That is, "there is a point where `g` is strongly true, before which `f` is always weakly true".
--/
-scoped infixl:41 " U " => TraceSet.until
-
-/--
-`f R g` is *release* (`TraceSet.release`).
-True if at every point, if every strong shift to before that point makes `f` false,
-then the weak shift to the point makes `g` true.
-That is, "`g` is weakly true at the first point `f` is strongly true".
--/
-scoped infixl:41 " R " => TraceSet.release
-
-/-- `F f` is *finally* (`TraceSet.finally`).
-True if some strong shift is true. -/
-scoped prefix:40 "F " => TraceSet.finally
-
-/-- `G f` is *globally* (`TraceSet.globally`).
-True if every weak shift is true. -/
-scoped prefix:40 "G " => TraceSet.globally
-
 /-- Macro to interpret a Lean expression as an LTL proposition. Results in a `TraceSet`. -/
 scoped syntax "LLTL[" term "]" : term
 
@@ -273,7 +249,7 @@ local macro "declare_lltl_notation " vars:ident* " : " ltl:term " => " t:term : 
   let unexpandRHS ← vars.foldrM (init := unexpandRHS) fun var unexpandRHS => `(let $var:ident := stripLLTL $var; $unexpandRHS)
   `(
   macro_rules
-    | `(LLTL[$macroLHS]) => `($macroRHS)
+    | `(LLTL[$macroLHS]) => `(($macroRHS : TraceSet _))
   @[scoped app_unexpander $c]
   aux_def unexpand : PrettyPrinter.Unexpander := fun
     | `($unexpandLHS) => $unexpandRHS
@@ -283,8 +259,8 @@ local macro "declare_lltl_notation " vars:ident* " : " ltl:term " => " t:term : 
 /- Temporal Operators -/
 declare_lltl_notation p : Xˢ p => TraceSet.snext p
 declare_lltl_notation p : Xʷ p => TraceSet.wnext p
-declare_lltl_notation p : F p  => TraceSet.finally p
-declare_lltl_notation p : G p  => TraceSet.globally p
+declare_lltl_notation p : 𝐅 p  => HasFinally.finally p
+declare_lltl_notation p : 𝐆 p  => HasGlobally.globally p
 declare_lltl_notation p q : p U q => TraceSet.until p q
 declare_lltl_notation p q : p R q => TraceSet.release p q
 
@@ -344,10 +320,10 @@ variable {σ : Type} (p q : TraceSet σ) (x y : TraceFun σ Nat)
 /-- info: LLTL[p → ¬q] : TraceSet σ -/
 #guard_msgs in #check LLTL[p → ¬ q]
 
-/-- info: LLTL[p → G ¬q] : TraceSet σ -/
-#guard_msgs in #check LLTL[p → G (¬ q)]
-/-- info: LLTL[G (p → ¬q)] : TraceSet σ -/
-#guard_msgs in #check LLTL[G (p → ¬ q)]
+/-- info: LLTL[p → 𝐆 ¬q] : TraceSet σ -/
+#guard_msgs in #check LLTL[p → 𝐆 (¬ q)]
+/-- info: LLTL[𝐆 (p → ¬q)] : TraceSet σ -/
+#guard_msgs in #check LLTL[𝐆 (p → ¬ q)]
 
 -- #check LLTL[1 + 2 < 3]
 -- #check LLTL[1 + (←ˢ x) < 3]

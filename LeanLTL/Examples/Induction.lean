@@ -4,7 +4,7 @@ open LeanLTL
 open scoped LeanLTL.Notation
 
 example {σ : Type} (n : σ → ℕ) :
-    ⊨ⁱ LLTL[G ((←ˢ n) < (←ˢ X n)) → ∀ m, F (m < (←ˢ n))] := by
+    ⊨ⁱ LLTL[𝐆 ((←ˢ n) < (←ˢ X n)) → ∀ m, 𝐅 (m < (←ˢ n))] := by
   simp +contextual [push_ltl]
   intros t ht hn x
   induction x with
@@ -20,7 +20,7 @@ example {σ : Type} (n : σ → ℕ) :
     omega
 
 example {σ : Type} (n : σ → ℕ) :
-    ⊨ LLTL[G ((← n) < (← X n)) → ∀ m, F (m < (←ʷ n))] := by
+    ⊨ LLTL[𝐆 ((← n) < (← X n)) → ∀ m, 𝐅 (m < (←ʷ n))] := by
   simp +contextual [push_ltl]
   intro t ht n
   induction n with
