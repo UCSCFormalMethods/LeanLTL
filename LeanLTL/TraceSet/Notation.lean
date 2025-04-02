@@ -214,6 +214,7 @@ macro_rules
     | `(⊥)             => `(TraceSet.false)
     -- Assume constants are TraceSet constants
     | `($c:ident)      => `(ensure_trace_set% $c)
+    | `($c:ident $xs*)      => `(ensure_trace_set% ($c $xs*))
     -- Process embedded nexts and gets and treat the result as a `Prop`.
     | _                => termToTraceSet p
 
