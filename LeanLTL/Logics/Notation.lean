@@ -82,17 +82,17 @@ macro_rules | `(𝐗ˢ $t) => `(SShift.sshift 1 $t)
 macro_rules | `(𝐗ʷ $t) => `(WShift.wshift 1 $t)
 macro_rules | `(𝐗 $t) => `(Shift.shift 1 $t)
 
-@[app_unexpander SShift.sshift]
+@[scoped app_unexpander SShift.sshift]
 def unexpand_sshift : Lean.PrettyPrinter.Unexpander
   | `($_ 1 $t) => `(𝐗ˢ $t)
   | `($_ $n $t) => `(𝐗ˢ($n) $t)
   | _ => throw ()
-@[app_unexpander WShift.wshift]
+@[scoped app_unexpander WShift.wshift]
 def unexpand_wshift : Lean.PrettyPrinter.Unexpander
   | `($_ 1 $t) => `(𝐗ʷ $t)
   | `($_ $n $t) => `(𝐗ʷ($n) $t)
   | _ => throw ()
-@[app_unexpander Shift.shift]
+@[scoped app_unexpander Shift.shift]
 def unexpand_shift : Lean.PrettyPrinter.Unexpander
   | `($_ 1 $t) => `(𝐗 $t)
   | `($_ $n $t) => `(𝐗($n) $t)
