@@ -1,4 +1,5 @@
 import LeanLTL.Trace.Defs
+import LeanLTL.Logics.Notation
 
 /-!
 # Functions on traces
@@ -75,12 +76,14 @@ def fixTrue (f : TraceFun σ Prop) : TraceFun σ Prop := TraceFun.fixConst f Tru
 /-!
 ### Temporal Operators
 -/
-protected def shift (f : TraceFun σ α) (i : ℕ) : TraceFun σ α where
+protected def shift (i : ℕ) (f : TraceFun σ α) : TraceFun σ α where
   eval t :=
     if h : i < t.length
     then f (t.shift i h)
     else none
 
 protected abbrev next  (f : TraceFun σ α) : TraceFun σ α := f.shift 1
+
+instance : Shift (TraceFun σ α) := ⟨TraceFun.shift⟩
 
 end TraceFun

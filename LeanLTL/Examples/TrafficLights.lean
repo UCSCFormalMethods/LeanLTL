@@ -27,10 +27,10 @@ abbrev max_departs : ℕ := 3
 abbrev TL1StartGreen    := LLTL[TL1Green]
 abbrev TL2StartRed      := LLTL[¬TL2Green]
 
-abbrev TL1ToTL2Green    := LLTL[𝐆 ((TL1Green ∧ ((← TL1Queue) = 0)) → (Xˢ (¬TL1Green ∧ TL2Green)))]
-abbrev TL2ToTL1Green    := LLTL[𝐆 ((TL2Green ∧ ((← TL2Queue) = 0)) → (Xˢ (TL1Green ∧ ¬ TL2Green)))]
-abbrev TL1StayGreen     := LLTL[𝐆 ((TL1Green ∧ ((← TL1Queue) ≠ 0)) → (Xˢ (TL1Green ∧ ¬ TL2Green)))]
-abbrev TL2StayGreen     := LLTL[𝐆 ((TL2Green ∧ ((← TL2Queue) ≠ 0)) → (Xˢ (¬ TL1Green ∧ TL2Green)))]
+abbrev TL1ToTL2Green    := LLTL[𝐆 ((TL1Green ∧ ((← TL1Queue) = 0)) → (𝐗ˢ (¬TL1Green ∧ TL2Green)))]
+abbrev TL2ToTL1Green    := LLTL[𝐆 ((TL2Green ∧ ((← TL2Queue) = 0)) → (𝐗ˢ (TL1Green ∧ ¬ TL2Green)))]
+abbrev TL1StayGreen     := LLTL[𝐆 ((TL1Green ∧ ((← TL1Queue) ≠ 0)) → (𝐗ˢ (TL1Green ∧ ¬ TL2Green)))]
+abbrev TL2StayGreen     := LLTL[𝐆 ((TL2Green ∧ ((← TL2Queue) ≠ 0)) → (𝐗ˢ (¬ TL1Green ∧ TL2Green)))]
 
 abbrev TL1GreenDeparts  := LLTL[𝐆 (TL1Green → ((← TL1Departs) = max_departs))]
 abbrev TL1RedDeparts    := LLTL[𝐆 (¬TL1Green → ((← TL1Departs) = 0))]
@@ -41,8 +41,8 @@ abbrev TL1ArrivesBounds := LLTL[𝐆 (0 ≤ (← TL1Arrives) ∧ (← TL1Arrives
 abbrev TL2ArrivesBounds := LLTL[𝐆 (0 ≤ (← TL2Arrives) ∧ (← TL2Arrives) ≤ max_arrives)]
 
 -- Note: Queues are defined as naturals, and so won't go negative if departures exceed queue size + arrivals
-abbrev TL1QueueNext     := LLTL[𝐆 ((X (← TL1Queue)) = (← TL1Queue) + (← TL1Arrives) - (← TL1Departs))]
-abbrev TL2QueueNext     := LLTL[𝐆 ((X (← TL2Queue)) = (← TL2Queue) + (← TL2Arrives) - (← TL2Departs))]
+abbrev TL1QueueNext     := LLTL[𝐆 ((𝐗 (← TL1Queue)) = (← TL1Queue) + (← TL1Arrives) - (← TL1Departs))]
+abbrev TL2QueueNext     := LLTL[𝐆 ((𝐗 (← TL2Queue)) = (← TL2Queue) + (← TL2Arrives) - (← TL2Departs))]
 
 abbrev TLBaseProperties := LLTL[TL1StartGreen ∧ TL2StartRed ∧ TL1ToTL2Green ∧ TL2ToTL1Green
                             ∧ TL1StayGreen ∧ TL2StayGreen ∧ TL1GreenDeparts ∧ TL1RedDeparts

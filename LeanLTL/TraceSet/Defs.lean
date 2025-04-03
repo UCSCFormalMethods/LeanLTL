@@ -110,13 +110,13 @@ def TraceFun.sget (a : TraceFun σ α) (f : α -> TraceSet σ) : TraceSet σ := 
 /--
 Weak shift.
 -/
-protected def TraceSet.wshift (f : TraceSet σ) (i : ℕ) : TraceSet σ where
+protected def TraceSet.wshift (i : ℕ) (f : TraceSet σ) : TraceSet σ where
   sat t := ∀ h : i < t.length, t.shift i h ⊨ f
 
 /--
 Strong shift.
 -/
-protected def TraceSet.sshift (f : TraceSet σ) (i : ℕ) : TraceSet σ where
+protected def TraceSet.sshift (i : ℕ) (f : TraceSet σ) : TraceSet σ where
   sat t := ∃ h : i < t.length, t.shift i h ⊨ f
 -- TODO: thm for (f.toFun.shift i).fixFalseConvert
 
@@ -139,3 +139,6 @@ instance : HasFinally (TraceSet σ) := ⟨TraceSet.finally⟩
 instance : HasGlobally (TraceSet σ) := ⟨TraceSet.globally⟩
 instance : HasUntil (TraceSet σ) := ⟨TraceSet.until⟩
 instance : HasRelease (TraceSet σ) := ⟨TraceSet.release⟩
+
+instance : WShift (TraceSet σ) := ⟨TraceSet.wshift⟩
+instance : SShift (TraceSet σ) := ⟨TraceSet.sshift⟩

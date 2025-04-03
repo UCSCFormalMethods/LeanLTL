@@ -95,6 +95,8 @@ lemma globally_eq : 𝐆 f = (𝐅 fᶜ)ᶜ := rfl
 @[simp] lemma release_eq_release : f₁.release f₂ = f₁ 𝐑 f₂ := rfl
 @[simp] lemma finally_eq_finally : f.finally = 𝐅 f := rfl
 @[simp] lemma globally_eq_globally : f.globally = 𝐆 f := rfl
+@[simp] lemma sshift_eq_sshift {i : ℕ} : f.sshift i = 𝐗ˢ(i) f := rfl
+@[simp] lemma wshift_eq_wshift {i : ℕ} : f.wshift i = 𝐗ʷ(i) f := rfl
 
 /-!
 ### Semantics lemmas (lemmas about `⊨`)
@@ -137,30 +139,30 @@ open scoped symmDiff
 
 
 @[push_ltl] lemma sat_wshift_iff (c : ℕ) :
-    (t ⊨ f.wshift c) ↔ ∀ h : c < t.length, t.shift c h ⊨ f := Iff.rfl
+    (t ⊨ 𝐗ʷ(c) f) ↔ ∀ h : c < t.length, t.shift c h ⊨ f := Iff.rfl
 
 @[push_ltl] lemma sat_sshift_iff (c : ℕ) :
-    (t ⊨ f.sshift c) ↔ ∃ h : c < t.length, t.shift c h ⊨ f := Iff.rfl
+    (t ⊨ 𝐗ˢ(c) f) ↔ ∃ h : c < t.length, t.shift c h ⊨ f := Iff.rfl
 
 @[push_ltl] lemma sat_until_iff :
-    (t ⊨ f₁ 𝐔 f₂) ↔ ∃ n, (∀ i < n, t ⊨ f₁.wshift i) ∧ (t ⊨ f₂.sshift n) := Iff.rfl
+    (t ⊨ f₁ 𝐔 f₂) ↔ ∃ n, (∀ i < n, t ⊨ 𝐗ʷ(i) f₁) ∧ (t ⊨ 𝐗ˢ(n) f₂) := Iff.rfl
 
 @[push_ltl] lemma sat_release_iff :
-    (t ⊨ f₁ 𝐑 f₂) ↔ ∀ (n : ℕ), (∀ i < n, ¬ t ⊨ f₁.sshift i) → (t ⊨ f₂.wshift n) := by
+    (t ⊨ f₁ 𝐑 f₂) ↔ ∀ (n : ℕ), (∀ i < n, ¬ t ⊨ 𝐗ˢ(i) f₁) → (t ⊨ 𝐗ʷ(n) f₂) := by
   simp only [release_eq, push_ltl]
   simp
 
 /-- Alternative formulation of `sat_release_iff`, without negations. -/
 lemma sat_release_iff' :
-    (t ⊨ f₁ 𝐑 f₂) ↔ ∀ (n : ℕ), (∃ i < n, t ⊨ f₁.sshift i) ∨ (t ⊨ f₂.wshift n) := by
+    (t ⊨ f₁ 𝐑 f₂) ↔ ∀ (n : ℕ), (∃ i < n, t ⊨ 𝐗ˢ(i) f₁) ∨ (t ⊨ 𝐗ʷ(n) f₂) := by
   simp only [sat_release_iff, imp_iff_not_or]
   push_neg
   rfl
 
-@[push_ltl] theorem sat_finally_iff : (t ⊨ 𝐅 f) ↔ ∃ n, t ⊨ f.sshift n := by
+@[push_ltl] theorem sat_finally_iff : (t ⊨ 𝐅 f) ↔ ∃ n, t ⊨ 𝐗ˢ(n) f := by
   simp [finally_eq, push_ltl]
 
-@[push_ltl] theorem sat_globally_iff : (t ⊨ 𝐆 f) ↔ ∀ n, t ⊨ f.wshift n := by
+@[push_ltl] theorem sat_globally_iff : (t ⊨ 𝐆 f) ↔ ∀ n, t ⊨ 𝐗ʷ(n) f := by
   simp [globally_eq, push_ltl]
 
 @[push_ltl] theorem sat_sget_iff (f : TraceFun σ α) (p : α → TraceSet σ) : (t ⊨ f.sget p) ↔ ∃ x, f t = some x ∧ (t ⊨ p x) := by
@@ -195,44 +197,42 @@ theorem sem_imp_iff_sem_ential : (f₁ ⇒ f₂) ↔ ⊨ f₁ ⇨ f₂ := Iff.rf
   simp [TraceSet.sem_imp_inf, push_ltl]
 
 
-lemma lt_of_sat_sshift {n : ℕ} (h : t ⊨ f.sshift n) : n < t.length := by
+lemma lt_of_sat_sshift {n : ℕ} (h : t ⊨ 𝐗ˢ(n) f) : n < t.length := by
   rw [sat_sshift_iff] at h
   exact h.1
 
-lemma not_sat_sshift_of_le {n : ℕ} (h : t.length ≤ n) : ¬(t ⊨ f.sshift n) := by
-  simp [push_ltl]
-  intro h'
-  have := lt_of_lt_of_le h' h
-  simp at this
+lemma not_sat_sshift_of_le {n : ℕ} (h : t.length ≤ n) : ¬(t ⊨ 𝐗ˢ(n) f) := by
+  contrapose! h
+  exact lt_of_sat_sshift h
 
-lemma sat_wshift_of_le {n : ℕ} (h : t.length ≤ n) : (t ⊨ f.wshift n) := by
+lemma sat_wshift_of_le {n : ℕ} (h : t.length ≤ n) : (t ⊨ 𝐗ʷ(n) f) := by
   simp [push_ltl]
   intro h'
   have := lt_of_lt_of_le h' h
   simp at this
 
 lemma singleton_sat_wshift {s : σ} (c : ℕ) :
-    (Trace.singleton s ⊨ f.wshift c) ↔ 0 < c ∨ (c = 0 ∧ Trace.singleton s ⊨ f) := by
+    (Trace.singleton s ⊨ 𝐗ʷ(c) f) ↔ 0 < c ∨ (c = 0 ∧ Trace.singleton s ⊨ f) := by
   obtain h | h := Nat.eq_zero_or_pos c <;> simp [push_ltl, h]
   intro
   omega
 
 -- TODO: Dual lemmas for unshift everywhere shift is
 
-@[simp] lemma unshift_sat_snext_iff (s : σ) : (Trace.unshift s t ⊨ f.snext) ↔ (t ⊨ f) := by
+@[simp] lemma unshift_sat_snext_iff (s : σ) : (Trace.unshift s t ⊨ 𝐗ˢ f) ↔ (t ⊨ f) := by
   simp [push_ltl]
 
-@[simp] lemma unshift_sat_wnext_iff (s : σ) : (Trace.unshift s t ⊨ f.wnext) ↔ (t ⊨ f) := by
+@[simp] lemma unshift_sat_wnext_iff (s : σ) : (Trace.unshift s t ⊨ 𝐗ʷ f) ↔ (t ⊨ f) := by
   simp [push_ltl]
 
 /-!
 ### Adjunctions
 -/
 
-lemma shift_sat_iff_sat_sshift {n : ℕ} (h : n < t.length) : (t.shift n h ⊨ f) ↔ (t ⊨ f.sshift n) := by
+lemma shift_sat_iff_sat_sshift {n : ℕ} (h : n < t.length) : (t.shift n h ⊨ f) ↔ (t ⊨ 𝐗ˢ(n) f) := by
   constructor <;> simp [push_ltl, h]
 
-lemma shift_sat_iff_sat_wshift {n : ℕ} (h : n < t.length) : (t.shift n h ⊨ f) ↔ (t ⊨ f.wshift n) := by
+lemma shift_sat_iff_sat_wshift {n : ℕ} (h : n < t.length) : (t.shift n h ⊨ f) ↔ (t ⊨ 𝐗ʷ(n) f) := by
   constructor <;> simp [push_ltl, h]
 
 /-!
@@ -242,10 +242,10 @@ lemma shift_sat_iff_sat_wshift {n : ℕ} (h : n < t.length) : (t.shift n h ⊨ f
 @[push_not_ltl, neg_norm_ltl] lemma not_not : fᶜᶜ = f := compl_compl f
 
 @[push_not_ltl, neg_norm_ltl]
-lemma not_sshift (n : ℕ) : (f.sshift n)ᶜ = fᶜ.wshift n := by ext t; simp [push_ltl]
+lemma not_sshift (n : ℕ) : (𝐗ˢ(n) f)ᶜ = 𝐗ʷ(n) fᶜ := by ext t; simp [push_ltl]
 
 @[push_not_ltl, neg_norm_ltl]
-lemma not_wshift (n : ℕ) : (f.wshift n)ᶜ = fᶜ.sshift n := by ext t; simp [push_ltl]
+lemma not_wshift (n : ℕ) : (𝐗ʷ(n) f)ᶜ = 𝐗ˢ(n) fᶜ := by ext t; simp [push_ltl]
 
 @[push_not_ltl] lemma not_finally : (𝐅 f)ᶜ = 𝐆 fᶜ := by ext t; simp [push_ltl]
 
@@ -273,18 +273,18 @@ lemma not_inj_iff : f₁ᶜ = f₂ᶜ ↔ f₁ = f₂ := compl_inj_iff
 @[neg_norm_ltl]
 lemma imp_eq_not_or : f₁ ⇨ f₂ = f₁ᶜ ⊔ f₂ := by ext t; simp [push_ltl, imp_iff_not_or]
 
-@[simp] lemma sshift_zero : f.sshift 0 = f := by ext t; simp [push_ltl]
+@[simp] lemma sshift_zero : 𝐗ˢ(0) f = f := by ext t; simp [push_ltl]
 
-@[simp] lemma wshift_zero : f.wshift 0 = f := by ext t; simp [push_ltl]
+@[simp] lemma wshift_zero : 𝐗ʷ(0) f = f := by ext t; simp [push_ltl]
 
-lemma sat_wshift_of_sat_sshift (c : ℕ) (h : t ⊨ f.sshift c) : t ⊨ f.wshift c := by
+lemma sat_wshift_of_sat_sshift (c : ℕ) (h : t ⊨ 𝐗ˢ(c) f) : t ⊨ 𝐗ʷ(c) f := by
   rw [sat_wshift_iff]
   intro
   rw [sat_sshift_iff] at h
   obtain ⟨_, hs⟩ := h
   exact hs
 
-@[simp] lemma sshift_sshift (n₁ n₂ : ℕ) : (f.sshift n₁).sshift n₂ = f.sshift (n₁ + n₂) := by
+@[simp] lemma sshift_sshift (n₁ n₂ : ℕ) : 𝐗ˢ(n₂) (𝐗ˢ(n₁) f) = 𝐗ˢ(n₁ + n₂) f := by
   ext t
   simp only [push_ltl]
   simp only [Trace.shift_shift, Trace.shift_length, Nat.cast_add, lt_tsub_iff_left]
@@ -299,7 +299,7 @@ lemma sat_wshift_of_sat_sshift (c : ℕ) (h : t ⊨ f.sshift c) : t ⊨ f.wshift
     · simp
     · norm_cast; omega
 
-@[simp] lemma wshift_wshift (n₁ n₂ : ℕ) : (f.wshift n₁).wshift n₂ = f.wshift (n₂ + n₁) := by
+@[simp] lemma wshift_wshift (n₁ n₂ : ℕ) : 𝐗ʷ(n₂) (𝐗ʷ(n₁) f) = 𝐗ʷ(n₂ + n₁) f := by
   ext t
   simp only [push_ltl]
   simp only [Trace.shift_length, Trace.shift_shift, Nat.cast_add, add_comm, lt_tsub_iff_right]
@@ -322,11 +322,11 @@ lemma not_true : (⊤ᶜ : TraceSet σ) = ⊥ := compl_top
 lemma not_false : (⊥ᶜ : TraceSet σ) = ⊤ := compl_bot
 
 @[simp]
-lemma wshift_true (n : ℕ) : (⊤ : TraceSet σ).wshift n = ⊤ := by
+lemma wshift_true (n : ℕ) : 𝐗ʷ(n) (⊤ : TraceSet σ) = ⊤ := by
   ext t; simp [push_ltl]
 
 @[simp]
-lemma sshift_false (n : ℕ) : (⊥ : TraceSet σ).sshift n = ⊥ := by
+lemma sshift_false (n : ℕ) : 𝐗ˢ(n) (⊥ : TraceSet σ) = ⊥ := by
   ext t; simp [push_ltl]
 
 lemma release_eq_not_until_not : f₁ 𝐑 f₂ = (f₁ᶜ 𝐔 f₂ᶜ)ᶜ := rfl
@@ -416,7 +416,7 @@ theorem sat_finally_of (h : t ⊨ f) : t ⊨ 𝐅 f := by
   use 0
   simpa
 
-lemma sshift_until (n : ℕ) : (f₁ 𝐔 f₂).sshift n = (f₁.sshift n) 𝐔 (f₂.sshift n) := by
+lemma sshift_until (n : ℕ) : 𝐗ˢ(n) (f₁ 𝐔 f₂) = (𝐗ˢ(n) f₁) 𝐔 (𝐗ˢ(n) f₂) := by
   ext t
   simp [push_ltl]
   constructor
@@ -491,7 +491,7 @@ lemma sshift_until (n : ℕ) : (f₁ 𝐔 f₂).sshift n = (f₁.sshift n) 𝐔 
     simp
     use n, h1, h2
 
-lemma wshift_release (n : ℕ) : (f₁ 𝐑 f₂).wshift n = (f₁.wshift n) 𝐑 (f₂.wshift n) := by
+lemma wshift_release (n : ℕ) : 𝐗ʷ(n) (f₁ 𝐑 f₂) = (𝐗ʷ(n) f₁) 𝐑 (𝐗ʷ(n) f₂) := by
   rw [release_eq_not_until_not, ← not_sshift, sshift_until, release_eq_not_until_not, not_wshift, not_wshift]
 
 @[simp] theorem release_release : f₁ 𝐑 (f₁ 𝐑 f₂) = f₁ 𝐑 f₂ := by
@@ -507,16 +507,16 @@ lemma wshift_release (n : ℕ) : (f₁ 𝐑 f₂).wshift n = (f₁.wshift n) �
 ### Distributivity
 -/
 
-lemma wshift_and_distrib (n : ℕ) : (f₁ ⊓ f₂).wshift n = (f₁.wshift n) ⊓ (f₂.wshift n) := by
+lemma wshift_and_distrib (n : ℕ) : 𝐗ʷ(n) (f₁ ⊓ f₂) = (𝐗ʷ(n) f₁) ⊓ (𝐗ʷ(n) f₂) := by
   ext t; simp [push_ltl, forall_and]
 
-lemma wshift_or_distrib (n : ℕ) : (f₁ ⊔ f₂).wshift n = (f₁.wshift n) ⊔ (f₂.wshift n) := by
+lemma wshift_or_distrib (n : ℕ) : 𝐗ʷ(n) (f₁ ⊔ f₂) = (𝐗ʷ(n) f₁) ⊔ (𝐗ʷ(n) f₂) := by
   ext t; by_cases n < t.length <;> simp [push_ltl, *]
 
-lemma sshift_and_distrib (n : ℕ) : (f₁ ⊓ f₂).sshift n = (f₁.sshift n) ⊓ (f₂.sshift n) := by
+lemma sshift_and_distrib (n : ℕ) : 𝐗ˢ(n) (f₁ ⊓ f₂) = (𝐗ˢ(n) f₁) ⊓ (𝐗ˢ(n) f₂) := by
   ext t; by_cases n < t.length <;> simp [push_ltl, *]
 
-lemma sshift_or_distrib (n : ℕ) : (f₁ ⊔ f₂).sshift n = (f₁.sshift n) ⊔ (f₂.sshift n) := by
+lemma sshift_or_distrib (n : ℕ) : 𝐗ˢ(n) (f₁ ⊔ f₂) = (𝐗ˢ(n) f₁) ⊔ (𝐗ˢ(n) f₂) := by
   ext t; by_cases n < t.length <;> simp [push_ltl, *]
 
 lemma until_or_distrib : f₁ 𝐔 (f₂ ⊔ f₃) = (f₁ 𝐔 f₂) ⊔ (f₁ 𝐔 f₃) := by
@@ -560,13 +560,13 @@ theorem not_anti (h : f₁ ⇒ f₂) : f₂ᶜ ⇒ f₁ᶜ := by
   intro t
   exact mt (h t)
 
-theorem snext_mono (h : f₁ ⇒ f₂) : f₁.snext ⇒ f₂.snext := by
+theorem snext_mono (h : f₁ ⇒ f₂) : 𝐗ˢ f₁ ⇒ 𝐗ˢ f₂ := by
   simp +contextual only [sem_imp_iff, sat_imp_iff, sat_sshift_iff, Nat.cast_one,
     forall_exists_index, exists_true_left]
   intro _ _ h'
   exact h _ h'
 
-theorem wnext_mono (h : f₁ ⇒ f₂) : f₁.wnext ⇒ f₂.wnext := by
+theorem wnext_mono (h : f₁ ⇒ f₂) : 𝐗ʷ f₁ ⇒ 𝐗ʷ f₂ := by
   simp only [sem_imp_iff, sat_imp_iff, sat_wshift_iff, Nat.cast_one]
   intro _ h' h''
   exact h _ (h' h'')
@@ -620,7 +620,7 @@ theorem sat_finally_imp_of_finally_imp (h : t ⊨ 𝐅 f₁ ⇨ 𝐆 f₂) : t �
 -/
 
 theorem until_eq_or_and :
-    f₁ 𝐔 f₂ = f₂ ⊔ (f₁ ⊓ (f₁ 𝐔 f₂).snext) := by
+    f₁ 𝐔 f₂ = f₂ ⊔ (f₁ ⊓ 𝐗ˢ (f₁ 𝐔 f₂)) := by
   ext t
   cases t using Trace.unshift_cases with
   | singleton =>
@@ -657,16 +657,16 @@ theorem until_eq_or_and :
         | succ n => simp; apply h3; omega
 
 theorem release_eq_and_or :
-    f₁ 𝐑 f₂ = f₂ ⊓ (f₁ ⊔ (f₁ 𝐑 f₂).wnext) := by
+    f₁ 𝐑 f₂ = f₂ ⊓ (f₁ ⊔ 𝐗ʷ (f₁ 𝐑 f₂)) := by
   conv_lhs =>
     rw [release_eq_not_until_not, until_eq_or_and]
     simp only [push_not_ltl]
 
-theorem finally_eq_or_finally : 𝐅 f = f ⊔ (𝐅 f).snext := by
+theorem finally_eq_or_finally : 𝐅 f = f ⊔ 𝐗ˢ (𝐅 f) := by
   conv_lhs =>
     rw [finally_eq, until_eq_or_and, ← finally_eq, top_inf_eq]
 
-theorem globally_eq_and_globally : 𝐆 f = f ⊓ (𝐆 f).wnext := by
+theorem globally_eq_and_globally : 𝐆 f = f ⊓ 𝐗ʷ (𝐆 f) := by
   conv_lhs =>
     rw [globally_eq, finally_eq_or_finally]
     simp [push_not_ltl]
@@ -684,7 +684,7 @@ lemma unshift_sat_globally_iff (s : σ) :
 Induction principle for proving `t ⊨ 𝐆 p`.
 -/
 theorem globally_induction {p : TraceSet σ} (t : Trace σ)
-    (base : t ⊨ p) (step : t ⊨ 𝐆 (p ⇨ p.wnext)) :
+    (base : t ⊨ p) (step : t ⊨ 𝐆 (p ⇨ 𝐗ʷ p)) :
     t ⊨ 𝐆 p := by
   simp [push_ltl]
   intro n h_n

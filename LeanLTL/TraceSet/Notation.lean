@@ -24,15 +24,6 @@ open Lean Meta Elab Term
 
 open scoped symmDiff
 
-/-- `Xˢ f` is *strong next* (`TraceSet.snext`). Requires that there is a next state in the trace. -/
-scoped prefix:100 "Xˢ " => TraceSet.snext
-
-/-- `Xʷ f` is *weak next* (`TraceSet.wnext`). Allows there to not be a next state in the trace. -/
-scoped prefix:100 "Xʷ " => TraceSet.wnext
-
-/-- `X f` is *next* for values (`TraceFun.next`). Undefined if there is no next state in the trace. -/
-scoped prefix:100 "X " => TraceFun.next
-
 /--
 `(←ˢ f)` is *strong get* for values, for use in `LLTL[...]` and `LLTLV[...]`.
 Requires that the value exists, otherwise the surrounding proposition evaluates to false.
@@ -83,9 +74,9 @@ elab "ensure_trace_fun% " t:term : term => do
     return e
 
 /--
-Pushes any `X` operators into strong/weak get operators.
+Pushes any `𝐗` operators into strong/weak get operators.
 
-Example: `X ((←ˢ x) < 10)` becomes `(←ˢ X x) < 10`
+Example: `𝐗 ((←ˢ x) < 10)` becomes `(←ˢ 𝐗 x) < 10`
 -/
 partial def pushNexts (stx : Term) : MacroM Term :=
   return ⟨(← go [] stx)⟩
@@ -95,10 +86,10 @@ where
     | `(←ˢ%$tk $x) => `(←ˢ%$tk $(← wrapXs xstack x))
     | `(←%$tk $x)  => `(←%$tk $(← wrapXs xstack x))
     | `(←ʷ%$tk $x) => `(←ʷ%$tk $(← wrapXs xstack x))
-    | `(X%$tk $stx') =>
+    | `(𝐗%$tk $stx') =>
       let res ← go (tk :: xstack) stx'
       if (res.find? (·==tk)).isNone then
-        Macro.throwErrorAt tk "superfluous X, expression is time-invariant"
+        Macro.throwErrorAt tk "superfluous 𝐗, expression is time-invariant"
       return res
     | _ =>
       if let .node _ k args := stx then
@@ -111,7 +102,7 @@ where
     | [] => return stx
     | tk::xstack' =>
       let stx' ← wrapXs xstack' stx
-      `(X%$tk $stx')
+      `(𝐗%$tk $stx')
 
 /--
 Lifts any strong/weak get operators out of the syntax, creating a TraceSet.
@@ -205,7 +196,7 @@ macro_rules
   | `(LLTLV[$v]) => withRef v do
     match v with
     -- Temporal Operators
-    | `(X $x)          => `(TraceFun.next LLTLV[$x])
+    | `(𝐗 $x)          => `(TraceFun.next LLTLV[$x])
     | `(←ˢ $_)         => Macro.throwError "Unexpected unlifted strong get"
     | `(←ʷ $_)         => Macro.throwError "Unexpected unlifted weak get"
     -- Parentheses, Constants, and Base Cases
@@ -257,12 +248,14 @@ local macro "declare_lltl_notation " vars:ident* " : " ltl:term " => " t:term : 
   )
 
 /- Temporal Operators -/
-declare_lltl_notation p : Xˢ p => TraceSet.snext p
-declare_lltl_notation p : Xʷ p => TraceSet.wnext p
+declare_lltl_notation p : 𝐗ˢ(i) p => SShift.sshift i p
+declare_lltl_notation p : 𝐗ʷ(i) p => WShift.wshift i p
+declare_lltl_notation p : 𝐗ˢ p => SShift.sshift 1 p
+declare_lltl_notation p : 𝐗ʷ p => WShift.wshift 1 p
 declare_lltl_notation p : 𝐅 p  => HasFinally.finally p
 declare_lltl_notation p : 𝐆 p  => HasGlobally.globally p
-declare_lltl_notation p q : p U q => TraceSet.until p q
-declare_lltl_notation p q : p R q => TraceSet.release p q
+declare_lltl_notation p q : p 𝐔 q => HasUntil.until p q
+declare_lltl_notation p q : p 𝐑 q => HasRelease.release p q
 
 open PrettyPrinter Delaborator SubExpr
 
@@ -316,6 +309,18 @@ variable {σ : Type} (p q : TraceSet σ) (x y : TraceFun σ Nat)
 #guard_msgs in #check LLTL[¬ p]
 /-- info: LLTL[p → q] : TraceSet σ -/
 #guard_msgs in #check LLTL[p → q]
+/-- info: LLTL[p 𝐔 q] : TraceSet σ -/
+#guard_msgs in #check LLTL[p 𝐔 q]
+/-- info: LLTL[p 𝐑 q] : TraceSet σ -/
+#guard_msgs in #check LLTL[p 𝐑 q]
+/-- info: LLTL[𝐅 p] : TraceSet σ -/
+#guard_msgs in #check LLTL[𝐅 p]
+/-- info: LLTL[𝐆 p] : TraceSet σ -/
+#guard_msgs in #check LLTL[𝐆 p]
+/-- info: LLTL[𝐗ˢ p] : TraceSet σ -/
+#guard_msgs in #check LLTL[𝐗ˢ p]
+/-- info: LLTL[𝐗ʷ p] : TraceSet σ -/
+#guard_msgs in #check LLTL[𝐗ʷ p]
 
 /-- info: LLTL[p → ¬q] : TraceSet σ -/
 #guard_msgs in #check LLTL[p → ¬ q]
