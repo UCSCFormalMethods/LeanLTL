@@ -26,19 +26,19 @@ True if every weak shift is true. -/
 scoped prefix:max "𝐆 " => HasGlobally.globally
 
 /--
-`f 𝒰 g` is *until*.
+`f 𝐔 g` is *until*.
 True if there is a point at which a strong shift makes `g` true,
 and all shifts of `f` until that point are true.
 That is, "there is a point where `g` is strongly true, before which `f` is always weakly true".
 -/
-scoped infix:70 " 𝒰 " => HasUntil.until
+scoped infix:70 " 𝐔 " => HasUntil.until
 
 /--
-`f ℛ g` is *release*.
+`f 𝐑 g` is *release*.
 True if at every point, if every strong shift to before that point makes `f` false,
 then the weak shift to the point makes `g` true.
 That is, "`g` is weakly true at the first point `f` is strongly true".
 -/
-scoped infix:70 " ℛ " => HasRelease.release
+scoped infix:70 " 𝐑 " => HasRelease.release
 
 end LeanLTL
