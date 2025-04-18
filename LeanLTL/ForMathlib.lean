@@ -19,3 +19,13 @@ lemma enat_leq_sub {n m : ENat} {a : ℕ} (h: n < m): (n - a: ENat) < m := by
 lemma Option.get_inj_iff {α : Type*} {o o' : Option α} {h} {h'} :
     o.get h = o'.get h' ↔ o = o' := by
   cases o <;> cases o' <;> simp [Option.isSome] at h h' ⊢
+
+theorem Option.bind_some_eq_map {α β : Type*} (x? : Option α) (f : α → β) :
+    (x?.bind fun x => some (f x)) = x?.map f := by
+  cases x? <;> rfl
+
+theorem Option.bind_map' {α β γ : Type*} {f : α → β} {g : β → Option γ} {x : Option α} :
+    (x.map f).bind g = x.bind (fun v => g (f v)) := Option.bind_map
+
+theorem Option.bind_map_assoc {α β γ : Type*} (x : Option α) (f : α → Option β) (g : β → Option γ) :
+    (x.bind f).bind g = x.bind fun y => (f y).bind g := by cases x <;> rfl

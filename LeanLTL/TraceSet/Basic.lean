@@ -315,9 +315,11 @@ lemma sat_wshift_of_sat_sshift (c : ℕ) (h : t ⊨ 𝐗ˢ(c) f) : t ⊨ 𝐗ʷ(
 
 -- TODO: are there sshift_wshift or wshift_sshift lemmas?
 
+-- `compl_top` is already a simp lemma
 @[push_not_ltl, neg_norm_ltl]
 lemma not_true : (⊤ᶜ : TraceSet σ) = ⊥ := compl_top
 
+-- `compl_bot` is already a simp lemma
 @[push_not_ltl, neg_norm_ltl]
 lemma not_false : (⊥ᶜ : TraceSet σ) = ⊤ := compl_bot
 

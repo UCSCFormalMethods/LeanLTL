@@ -195,8 +195,6 @@ macro_rules
 macro_rules
   | `(LLTLV[$v]) => withRef v do
     match v with
-    -- Temporal Operators
-    | `(𝐗 $x)          => `(TraceFun.next LLTLV[$x])
     | `(←ˢ $_)         => Macro.throwError "Unexpected unlifted strong get"
     | `(←ʷ $_)         => Macro.throwError "Unexpected unlifted weak get"
     -- Parentheses, Constants, and Base Cases
@@ -256,6 +254,43 @@ declare_lltl_notation p : 𝐅 p  => HasFinally.finally p
 declare_lltl_notation p : 𝐆 p  => HasGlobally.globally p
 declare_lltl_notation p q : p 𝐔 q => HasUntil.until p q
 declare_lltl_notation p q : p 𝐑 q => HasRelease.release p q
+
+def stripLLTLV (stx : Term) : Term :=
+  match stx with
+  | `(LLTLV[$x]) => x
+  | `($c:ident) => c
+  | _ => stx
+
+local macro "declare_lltlv_notation " vars:ident* " : " ltl:term " => " t:term : command => do
+  let (c, args) ←
+    match t with
+    | `($c:ident $args*) => pure (c, args)
+    | `($c:ident)        => pure (c, #[])
+    | _                  => Macro.throwUnsupported
+  let macroLHS : Term := ⟨antiquote vars ltl⟩
+  let macroRHSargs : Array Term ← args.mapM (fun arg => `(LLTLV[$(⟨antiquote vars arg⟩)]))
+  let macroRHS := Syntax.mkApp c macroRHSargs
+  let unexpandLHS : Term := Syntax.mkApp (← `($$_:ident)) <| args.map (⟨antiquote vars ·⟩)
+  let unexpandRHS ← `(`(LLTLV[$macroLHS]))
+  let unexpandRHS ← vars.foldrM (init := unexpandRHS) fun var unexpandRHS => `(let $var:ident := stripLLTLV $var; $unexpandRHS)
+  `(
+  macro_rules
+    | `(LLTLV[$macroLHS]) => `(($macroRHS : TraceFun _ _))
+  @[scoped app_unexpander $c]
+  aux_def unexpand : PrettyPrinter.Unexpander := fun
+    | `($unexpandLHS) => $unexpandRHS
+    | _ => throw ()
+  )
+
+declare_lltlv_notation f : 𝐗 f => TraceFun.next f
+declare_lltlv_notation f : -f => TraceFun.neg f
+declare_lltlv_notation f : ⌈f⌉ => TraceFun.ceil f
+declare_lltlv_notation f g : f + g => TraceFun.add f g
+declare_lltlv_notation f g : f - g => TraceFun.sub f g
+declare_lltlv_notation f g : f * g => TraceFun.mul f g
+declare_lltlv_notation f g : f / g => TraceFun.div f g
+declare_lltlv_notation f g : f ⊓ g => TraceFun.min f g
+declare_lltlv_notation f g : f ⊔ g => TraceFun.max f g
 
 open PrettyPrinter Delaborator SubExpr
 
@@ -332,7 +367,7 @@ variable {σ : Type} (p q : TraceSet σ) (x y : TraceFun σ Nat)
 
 -- #check LLTL[1 + 2 < 3]
 -- #check LLTL[1 + (←ˢ x) < 3]
--- #check LLTL[(←ˢ x) + (←ˢ x) < X (←ˢ x)]
+-- #check LLTL[(←ˢ x) + (←ˢ x) < 𝐗 (←ˢ x)]
 -- /-
 -- x.sget fun x_1 ↦ (X x).sget fun X_x ↦ TraceSet.const (x_1 + x_1 < X_x) : TraceSet σ
 -- -/

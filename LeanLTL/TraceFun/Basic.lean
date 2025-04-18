@@ -43,6 +43,23 @@ theorem map₂PreservesSome (g : α → α' → β) (f : TraceFun σ α) (f' : T
     (f.shift n) t = f (t.shift n (by simp [h])) := by
   simp [TraceFun.shift, h]
 
+@[simp] lemma shift_apply_eq_some_iff (t : Trace σ) (f : TraceFun σ α) (n : ℕ) (x : α) :
+    (f.shift n) t = some x ↔ ∃ h, f (t.shift n h) = some x := by
+  simp [TraceFun.shift]
+
+@[simp]
+theorem of_eval!_apply_singleton {σ α} [Inhabited α] (p : σ → α) {s} :
+    (TraceFun.of p).eval! (Trace.singleton s) = p s := rfl
+
+@[simp]
+theorem of_eval!_apply_unshift {σ α} [Inhabited α] (p : σ → α) {s t} :
+    (TraceFun.of p).eval! (Trace.unshift s t) = p s := rfl
+
+@[simp]
+theorem next_apply_unshift {σ α} (f : TraceFun σ α) (s : σ) (t : Trace σ) :
+    (TraceFun.next f) (Trace.unshift s t) = f t := by
+  simp [TraceFun.next, TraceFun.shift]
+
 /- TODO
 
 @[simp]
