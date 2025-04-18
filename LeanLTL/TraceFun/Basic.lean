@@ -39,7 +39,11 @@ theorem map₂PreservesSome (g : α → α' → β) (f : TraceFun σ α) (f' : T
 
 @[simp] lemma eval_proj0_eq [Inhabited σ] (t : Trace σ) : TraceFun.proj0 t = TraceFun.proj0.eval! t := rfl
 
-@[simp] lemma shift_apply (t : Trace σ) (h : t.Infinite) (f : TraceFun σ α) (n : ℕ) :
+@[simp] lemma shift_apply (t : Trace σ) (f : TraceFun σ α) (n : ℕ) (h) :
+    (f.shift n) t = f (t.shift n h) := by
+  simp [TraceFun.shift, h]
+
+@[simp] lemma shift_apply_of_infinite (t : Trace σ) (h : t.Infinite) (f : TraceFun σ α) (n : ℕ) :
     (f.shift n) t = f (t.shift n (by simp [h])) := by
   simp [TraceFun.shift, h]
 
@@ -59,6 +63,14 @@ theorem of_eval!_apply_unshift {σ α} [Inhabited α] (p : σ → α) {s t} :
 theorem next_apply_unshift {σ α} (f : TraceFun σ α) (s : σ) (t : Trace σ) :
     (TraceFun.next f) (Trace.unshift s t) = f t := by
   simp [TraceFun.next, TraceFun.shift]
+
+@[simp]
+theorem of_eval {σ α} (p : σ → α) (t : Trace σ) :
+    (TraceFun.of p).eval t = p (t.toFun 0) := rfl
+
+@[simp]
+theorem of_eval! {σ α} [Inhabited α] (p : σ → α) (t : Trace σ) :
+    (TraceFun.of p).eval! t = p (t.toFun 0) := rfl
 
 /- TODO
 

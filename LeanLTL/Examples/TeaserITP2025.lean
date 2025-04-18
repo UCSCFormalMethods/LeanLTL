@@ -13,3 +13,9 @@ example : ⊨ⁱ LLTL[((← n) = 5 ∧ 𝐆 ((𝐗 (← n)) = (← n) ^ 2)) → 
   rintro t hinf ⟨h1, h2⟩
   apply TraceSet.globally_induction <;> simp_all [push_ltl, hinf]
   intros; nlinarith
+
+example : ⊨ LLTL[((← n) = 5 ∧ 𝐆 ((𝐗 (← n)) = (← n) ^ 2)) → 𝐆 (5 ≤ (← n))] := by
+  rintro t ⟨h1, h2⟩
+  have := t.inhabited
+  apply TraceSet.globally_induction <;> simp_all [push_ltl]
+  intros; nlinarith

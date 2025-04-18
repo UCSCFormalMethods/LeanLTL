@@ -17,6 +17,7 @@ structure ExState where
   (TL1Green TL2Green : Prop)
   (TL1Arrives TL1Departs TL1Queue : ℕ)
   (TL2Arrives TL2Departs TL2Queue : ℕ)
+  deriving Inhabited
 open ExState
 
 abbrev max_arrives : ℕ := 2
@@ -144,12 +145,11 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
         specialize h14 (n + i)
         have fact : 1 + (n + i) = n + (i + 1) := by ring
         simp_rw [fact] at h14
-        simp_rw [h14]
+        simp [h14]
         specialize h i
         simp [push_ltl, h_t_inf, max_arrives, max_departs] at h12 h9
         specialize h12 (n + i)
         specialize h9 (n + i) (this _)
-        simp [TL2Queue]
         omega
       let i₀ := by classical exact Nat.find this
       have fact1 : (t.shift (n+i₀) (by simp_all)) ⊨ LLTL[(← TL2Queue) = 0] := by
@@ -228,12 +228,11 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
         have fact : 1 + (n + i) = n + (i + 1) := by ring
         simp_rw [fact] at h13
         ring_nf at h13 ⊢
-        rw [h13]
+        simp [h13]
         specialize h i
         simp [push_ltl, h_t_inf, max_arrives, max_departs] at h11 h7
         specialize h11 (n + i)
         specialize h7 (n + i) (this _)
-        simp [TL1Queue]
         omega
       let i₀ := by classical exact Nat.find this
       have fact1 : (t.shift (n+i₀) (by simp_all)) ⊨ LLTL[(← TL1Queue) = 0] := by

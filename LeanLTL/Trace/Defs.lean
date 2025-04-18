@@ -23,9 +23,15 @@ variable {σ σ' σ'' α α' β β': Type*}
 
 attribute [simp] Trace.nempty
 
-/-- Get the `n`th state, assuming it is in bounds. -/
+/-- Get the `n`th state, with a proof that `n` is in bounds. -/
 protected def toFun (t : Trace σ) (n : ℕ) (h : n < t.length := by simp [Trace.nempty]) : σ :=
   (t.toFun? n).get ((t.defined n).mp h)
+
+/-- Get the `n`th state, assuming that `n` is in bounds. -/
+protected def toFun! [Inhabited σ] (t : Trace σ) (n : ℕ) : σ :=
+  (t.toFun? n).get!
+
+protected def inhabited (t : Trace σ) : Inhabited σ := ⟨t.toFun 0⟩
 
 /-- Transforms the states of a trace. -/
 protected def map (f : σ → σ') (t : Trace σ) : Trace σ' where

@@ -26,6 +26,10 @@ lemma toFun_eq {t : Trace σ} (i : ℕ) (h : i < t.length) :
 @[simp] lemma toFun?_zero_eq {t : Trace σ} : t.toFun? 0 = some (t.toFun 0) := by
   rw [Trace.toFun, Option.some_get]
 
+@[simp] lemma toFun_apply_eq_toFun! [Inhabited σ] {t : Trace σ} (n : ℕ) (h) :
+    t.toFun n h = t.toFun! n := by
+  simp only [Trace.toFun, Trace.toFun!, Option.get_eq_get!]
+
 theorem isSome_toFun_zero (t : Trace σ) : (t.toFun? 0).isSome := by simp
 
 @[simp] lemma isSome_toFun?_iff (t : Trace σ) (i : Nat) : (t.toFun? i).isSome ↔ i < t.length :=
@@ -63,6 +67,8 @@ lemma one_lt_unshift_length (s : σ) (t : Trace σ) : 1 < (Trace.unshift s t).le
   · norm_cast; simp
 
 lemma singleton_toFun_zero_eq (s : σ) : (Trace.singleton s).toFun 0 = s := rfl
+
+lemma singleton_toFun!_zero_eq [Inhabited σ] (s : σ) : (Trace.singleton s).toFun! 0 = s := rfl
 
 @[simp] lemma singleton_toFun_eq {s : σ} {n} {h} : (Trace.singleton s).toFun n h = s := by
   simp only [singleton_length, Nat.cast_lt_one] at h
@@ -216,6 +222,7 @@ private lemma shift_shift_aux {t : Trace σ} {m n : ℕ}
   . norm_cast at *
     omega
 
+@[simp]
 lemma toFun_shift (t : Trace σ) (i j : ℕ) (h) (h') :
     (t.shift i h).toFun j h' = t.toFun (j + i) (shift_shift_aux h h') := rfl -- (!)
 
@@ -231,5 +238,25 @@ theorem shift_shift (t : Trace σ) (m n : ℕ)
   . simp [toFun_shift]
     congr! 1
     ring
+
+@[simp]
+lemma toFun_unshift_zero (s : σ) (t : Trace σ) (h) :
+    (Trace.unshift s t).toFun 0 h = s := rfl
+
+@[simp]
+lemma toFun_unshift_succ (s : σ) (t : Trace σ) (i : ℕ) (h) :
+    (Trace.unshift s t).toFun (i + 1) h = t.toFun i (by simpa using h) := rfl
+
+@[simp]
+lemma toFun!_shift [Inhabited σ] (t : Trace σ) (i j : ℕ) (h) :
+    (t.shift i h).toFun! j = t.toFun! (j + i) := rfl -- (!)
+
+@[simp]
+lemma toFun!_unshift_zero [Inhabited σ] (s : σ) (t : Trace σ) :
+    (Trace.unshift s t).toFun! 0 = s := rfl
+
+@[simp]
+lemma toFun!_unshift_succ [Inhabited σ] (s : σ) (t : Trace σ) (i : ℕ) :
+    (Trace.unshift s t).toFun! (i + 1) = t.toFun! i := rfl
 
 end Trace

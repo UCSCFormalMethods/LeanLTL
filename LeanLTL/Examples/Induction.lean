@@ -27,24 +27,20 @@ example {σ : Type} (n : σ → ℕ) :
   | zero =>
     use 1
     simp
-    obtain ⟨m, ht⟩ := ht 0 (by simp)
-    simp at ht
-    simp [TraceFun.shift] at ht
-    obtain ⟨⟨h, rfl⟩, h'⟩ := ht
+    obtain ⟨h, hn⟩ := ht 0 (by simp)
+    simp at h hn
     exists h
     omega
   | succ x ih =>
     obtain ⟨m, hm, ih⟩ := ih
-    obtain ⟨k, ht, ht'⟩ := ht m hm
-    simp [TraceFun.shift] at ht
-    obtain ⟨hm', rfl⟩ := ht
+    obtain ⟨hm', ht⟩ := ht m hm
     use 1 + m
     constructor
     · omega
     · have : m < t.length := by
         generalize_proofs at ih
         assumption
-      clear ht'
+      clear ht
       revert hm'
       cases t.length <;> simp
       norm_cast
