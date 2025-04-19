@@ -16,35 +16,21 @@ theorem imp_assumptions : ⊨ LLTL[(assumptions ∧ fprops) → guarantees] := b
   intro n h_n h1
   simp [sat_sget_iff] at h1
   obtain ⟨_, ⟨h_next_ts, rfl⟩, d, hd, h1⟩ := h1
+  simp [push_ltl, h_next_ts] at hd
+  cases hd
   simp [push_ltl] at hF1 hF2
   have : ↑(n + 1) < t.length := by
-    clear hd h1 hF1 hF2
+    clear h1 hF1 hF2
     revert h_n h_next_ts
     cases t.length
     · simp
     · norm_cast; omega
-
   specialize hF1 (n + 1) this
   specialize hF2 n h_n
-  simp [h_next_ts, CF_N1, CF_N2, CF, push_ltl] at hF1 hF2
-  simp [push_ltl, h_next_ts]
-  simp [push_ltl, h_next_ts] at hd
-  cases hd
-  simp [push_ltl] at h1
-  simp [ComponentFunc] at hF1
+  simp [h_next_ts, CF_N1, CF_N2, CF, push_ltl, ComponentFunc] at hF1 hF2
+  simp [push_ltl, h_next_ts] at h1 ⊢
   simp [add_comm 1] at *
-  split at hF1
-  · rename_i hh
-    simp at hF1
-    rw [← hF1]
+  split at hF1 <;> simp at hF1
+  · rw [← hF1]
     norm_num
-  · rename_i hh
-    simp at hF1
-    simp [ComponentFunc] at hF2
-    split at hF2
-    · simp at hF2
-      simp_all
-      linarith
-    · simp at hF2
-      simp_all
-      linarith
+  · split at hF2 <;> simp_all <;> linarith
