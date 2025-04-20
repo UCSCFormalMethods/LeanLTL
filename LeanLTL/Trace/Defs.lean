@@ -75,4 +75,7 @@ protected def Finite (t : Trace α) : Prop := t.length < ⊤
 /-- Predicate that the trace is infinite in length. -/
 protected def Infinite (t : Trace α) : Prop := t.length = ⊤
 
+instance [Nonempty σ] : Nonempty (Trace σ) :=
+  ⟨Trace.singleton (Classical.arbitrary σ)⟩
+
 end Trace

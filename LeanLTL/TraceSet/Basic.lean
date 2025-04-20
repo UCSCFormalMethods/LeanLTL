@@ -11,7 +11,9 @@ namespace LeanLTL
 
 namespace TraceSet
 variable {σ σ' σ'' α α' β β': Type*}
-variable {t : Trace σ} {f f₁ f₂ f₃ : TraceSet σ}
+variable {t : Trace σ} {f f₁ f₂ f₃ f₄ : TraceSet σ}
+
+open scoped symmDiff
 
 @[ext]
 protected def ext {f g : TraceSet σ} (h : ∀ t, (t ⊨ f) ↔ (t ⊨ g)) : f = g := by
@@ -182,9 +184,18 @@ theorem sem_entail_iff_top_le : (⊨ f) ↔ (⊤ ≤ f) := by
 
 @[push_ltl] theorem sem_entail_iff : (⊨ f) ↔ ∀ (t : Trace σ), t ⊨ f := Iff.rfl
 
+theorem sem_entail_iff_iff : (⊨ f₁ ⇔ f₂) ↔ ∀ (t : Trace σ), (t ⊨ f₁) ↔ (t ⊨ f₂) := by
+  simp [sem_entail_iff, sat_iff_iff]
+
 @[push_ltl] theorem sem_entail_fin_iff : (⊨ᶠ f) ↔ ∀ (t : Trace σ), t.Finite → t ⊨ f := Iff.rfl
 
+theorem sem_entail_fin_iff_iff : (⊨ᶠ f₁ ⇔ f₂) ↔ ∀ (t : Trace σ), t.Finite → ((t ⊨ f₁) ↔ (t ⊨ f₂)) := by
+  simp [sem_entail_fin_iff, sat_iff_iff]
+
 @[push_ltl] theorem sem_entail_inf_iff : (⊨ⁱ f) ↔ ∀ (t : Trace σ), t.Infinite → t ⊨ f := Iff.rfl
+
+theorem sem_entail_inf_iff_iff : (⊨ⁱ f₁ ⇔ f₂) ↔ ∀ (t : Trace σ), t.Infinite → ((t ⊨ f₁) ↔ (t ⊨ f₂)) := by
+  simp [sem_entail_inf_iff, sat_iff_iff]
 
 @[push_ltl] theorem sem_imp_iff : (f₁ ⇒ f₂) ↔ ∀ (t : Trace σ), t ⊨ f₁ ⇨ f₂ := Iff.rfl
 
@@ -196,6 +207,11 @@ theorem sem_imp_iff_sem_ential : (f₁ ⇒ f₂) ↔ ⊨ f₁ ⇨ f₂ := Iff.rf
 @[push_ltl] theorem sem_imp_inf_iff : (f₁ ⇒ⁱ f₂) ↔ ∀ (t : Trace σ) (_: t.Infinite), t ⊨ f₁ ⇨ f₂ := by
   simp [TraceSet.sem_imp_inf, push_ltl]
 
+@[simp] theorem sem_entail_true : ⊨ (⊤ : TraceSet σ) := by
+  simp [sem_entail_iff, sat_true_iff]
+
+@[simp] theorem sem_entail_false [Nonempty (Trace σ)] : ¬ ⊨ (⊥ : TraceSet σ) := by
+  simp [sem_entail_iff, sat_false_iff, exists_true_iff_nonempty]
 
 lemma lt_of_sat_sshift {n : ℕ} (h : t ⊨ 𝐗ˢ(n) f) : n < t.length := by
   rw [sat_sshift_iff] at h
@@ -555,6 +571,102 @@ lemma globally_and_distrib : 𝐆 (f₁ ⊓ f₂) = 𝐆 f₁ ⊓ 𝐆 f₂ := b
   ext t; simp [push_ltl, forall_and]
 
 /-!
+### Finite trace congruence lemmas
+-/
+
+theorem entail_fin_not_congr (h : ⊨ᶠ f₁ ⇔ f₂) : ⊨ᶠ f₁ᶜ ⇔ f₂ᶜ := by
+  rw [sem_entail_fin_iff_iff] at h
+  simp +contextual [push_ltl, h]
+
+theorem entail_fin_sshift_congr (h : ⊨ᶠ f₁ ⇔ f₂) {n} : ⊨ᶠ 𝐗ˢ(n) f₁ ⇔ 𝐗ˢ(n) f₂ := by
+  rw [sem_entail_fin_iff_iff] at h
+  simp +contextual [push_ltl, h]
+
+theorem entail_fin_wshift_congr (h : ⊨ᶠ f₁ ⇔ f₂) {n} : ⊨ᶠ 𝐗ʷ(n) f₁ ⇔ 𝐗ʷ(n) f₂ := by
+  rw [sem_entail_fin_iff_iff] at h
+  simp +contextual [push_ltl, h]
+
+theorem entail_fin_finally_congr (h : ⊨ᶠ f₁ ⇔ f₂) : ⊨ᶠ 𝐅 f₁ ⇔ 𝐅 f₂ := by
+  rw [sem_entail_fin_iff_iff] at h
+  simp +contextual [push_ltl, h]
+
+theorem entail_fin_globally_congr (h : ⊨ᶠ f₁ ⇔ f₂) : ⊨ᶠ 𝐆 f₁ ⇔ 𝐆 f₂ := by
+  rw [sem_entail_fin_iff_iff] at h
+  simp +contextual [push_ltl, h]
+
+theorem entail_fin_and_congr (h : ⊨ᶠ f₁ ⇔ f₃) (h' : ⊨ᶠ f₂ ⇔ f₄) : ⊨ᶠ (f₁ ⊓ f₂) ⇔ (f₃ ⊓ f₄) := by
+  rw [sem_entail_fin_iff_iff] at h h'
+  simp +contextual [push_ltl, h, h']
+
+theorem entail_fin_or_congr (h : ⊨ᶠ f₁ ⇔ f₃) (h' : ⊨ᶠ f₂ ⇔ f₄) : ⊨ᶠ (f₁ ⊔ f₂) ⇔ (f₃ ⊔ f₄) := by
+  rw [sem_entail_fin_iff_iff] at h h'
+  simp +contextual [push_ltl, h, h']
+
+theorem entail_fin_imp_congr (h : ⊨ᶠ f₁ ⇔ f₃) (h' : ⊨ᶠ f₂ ⇔ f₄) : ⊨ᶠ (f₁ ⇨ f₂) ⇔ (f₃ ⇨ f₄) := by
+  rw [sem_entail_fin_iff_iff] at h h'
+  simp +contextual [push_ltl, h, h']
+
+theorem entail_fin_iff_congr (h : ⊨ᶠ f₁ ⇔ f₃) (h' : ⊨ᶠ f₂ ⇔ f₄) : ⊨ᶠ (f₁ ⇔ f₂) ⇔ (f₃ ⇔ f₄) := by
+  rw [sem_entail_fin_iff_iff] at h h'
+  simp +contextual [push_ltl, h, h']
+
+theorem entail_fin_until_congr (h : ⊨ᶠ f₁ ⇔ f₃) (h' : ⊨ᶠ f₂ ⇔ f₄) : ⊨ᶠ (f₁ 𝐔 f₂) ⇔ (f₃ 𝐔 f₄) := by
+  rw [sem_entail_fin_iff_iff] at h h'
+  simp +contextual [push_ltl, h, h']
+
+theorem entail_fin_release_congr (h : ⊨ᶠ f₁ ⇔ f₃) (h' : ⊨ᶠ f₂ ⇔ f₄) : ⊨ᶠ (f₁ 𝐑 f₂) ⇔ (f₃ 𝐑 f₄) := by
+  rw [sem_entail_fin_iff_iff] at h h'
+  simp +contextual [push_ltl, h, h']
+
+/-!
+### Infinite trace congruence lemmas
+-/
+
+theorem entail_inf_not_congr (h : ⊨ⁱ f₁ ⇔ f₂) : ⊨ⁱ f₁ᶜ ⇔ f₂ᶜ := by
+  rw [sem_entail_inf_iff_iff] at h
+  simp +contextual [push_ltl, h]
+
+theorem entail_inf_sshift_congr (h : ⊨ⁱ f₁ ⇔ f₂) {n} : ⊨ⁱ 𝐗ˢ(n) f₁ ⇔ 𝐗ˢ(n) f₂ := by
+  rw [sem_entail_inf_iff_iff] at h
+  simp +contextual [push_ltl, h]
+
+theorem entail_inf_wshift_congr (h : ⊨ⁱ f₁ ⇔ f₂) {n} : ⊨ⁱ 𝐗ʷ(n) f₁ ⇔ 𝐗ʷ(n) f₂ := by
+  rw [sem_entail_inf_iff_iff] at h
+  simp +contextual [push_ltl, h]
+
+theorem entail_infally_congr (h : ⊨ⁱ f₁ ⇔ f₂) : ⊨ⁱ 𝐅 f₁ ⇔ 𝐅 f₂ := by
+  rw [sem_entail_inf_iff_iff] at h
+  simp +contextual [push_ltl, h]
+
+theorem entail_inf_globally_congr (h : ⊨ⁱ f₁ ⇔ f₂) : ⊨ⁱ 𝐆 f₁ ⇔ 𝐆 f₂ := by
+  rw [sem_entail_inf_iff_iff] at h
+  simp +contextual [push_ltl, h]
+
+theorem entail_inf_and_congr (h : ⊨ⁱ f₁ ⇔ f₃) (h' : ⊨ⁱ f₂ ⇔ f₄) : ⊨ⁱ (f₁ ⊓ f₂) ⇔ (f₃ ⊓ f₄) := by
+  rw [sem_entail_inf_iff_iff] at h h'
+  simp +contextual [push_ltl, h, h']
+
+theorem entail_inf_or_congr (h : ⊨ⁱ f₁ ⇔ f₃) (h' : ⊨ⁱ f₂ ⇔ f₄) : ⊨ⁱ (f₁ ⊔ f₂) ⇔ (f₃ ⊔ f₄) := by
+  rw [sem_entail_inf_iff_iff] at h h'
+  simp +contextual [push_ltl, h, h']
+
+theorem entail_inf_imp_congr (h : ⊨ⁱ f₁ ⇔ f₃) (h' : ⊨ⁱ f₂ ⇔ f₄) : ⊨ⁱ (f₁ ⇨ f₂) ⇔ (f₃ ⇨ f₄) := by
+  rw [sem_entail_inf_iff_iff] at h h'
+  simp +contextual [push_ltl, h, h']
+
+theorem entail_inf_iff_congr (h : ⊨ⁱ f₁ ⇔ f₃) (h' : ⊨ⁱ f₂ ⇔ f₄) : ⊨ⁱ (f₁ ⇔ f₂) ⇔ (f₃ ⇔ f₄) := by
+  rw [sem_entail_inf_iff_iff] at h h'
+  simp +contextual [push_ltl, h, h']
+
+theorem entail_inf_until_congr (h : ⊨ⁱ f₁ ⇔ f₃) (h' : ⊨ⁱ f₂ ⇔ f₄) : ⊨ⁱ (f₁ 𝐔 f₂) ⇔ (f₃ 𝐔 f₄) := by
+  rw [sem_entail_inf_iff_iff] at h h'
+  simp +contextual [push_ltl, h, h']
+
+theorem entail_inf_release_congr (h : ⊨ⁱ f₁ ⇔ f₃) (h' : ⊨ⁱ f₂ ⇔ f₄) : ⊨ⁱ (f₁ 𝐑 f₂) ⇔ (f₃ 𝐑 f₄) := by
+  rw [sem_entail_inf_iff_iff] at h h'
+  simp +contextual [push_ltl, h, h']
+
+/-!
 ### Conditional lemmas
 -/
 
@@ -617,6 +729,59 @@ theorem sat_finally_imp_of_finally_imp (h : t ⊨ 𝐅 f₁ ⇨ 𝐆 f₂) : t �
   intro n _ h'
   exact h n _ h' _ _
 
+theorem sat_release_iff_globally_of_globally_not (h : t ⊨ 𝐆 f₁ᶜ) :
+    (t ⊨ f₁ 𝐑 f₂) ↔ t ⊨ 𝐆 f₂ := by
+  simp [push_ltl] at h ⊢
+  constructor
+  · intro h1 n hn
+    simp +contextual [h] at h1
+    apply h1
+  · intro h2 n hn
+    exact h2 n
+
+-- TODO add "strong release"
+theorem sat_release_iff_of_finally (h : t ⊨ 𝐅 f₁) :
+    (t ⊨ f₁ 𝐑 f₂) ↔ ∃ n, (∀ i ≤ n, t ⊨ 𝐗ʷ(i) f₂) ∧ t ⊨ 𝐗ˢ(n) f₁ := by
+  rw [sat_finally_iff] at h
+  classical
+  let n := Nat.find h
+  have hn := Nat.find_spec h
+  have hn' := fun m => Nat.find_min (H := h) (m := m)
+  rw [sat_release_iff]
+  constructor
+  · intro hr
+    refine ⟨n, ?_, hn⟩
+    intro i hi
+    apply hr
+    intro i' hi'
+    apply hn'
+    exact lt_of_lt_of_le hi' hi
+  · rintro ⟨n, h1, h2⟩
+    intro i hi
+    apply h1
+    by_contra! h
+    specialize hi n h
+    exact absurd h2 hi
+
+/--
+`f₁ 𝐑 f₂` means that `f₂` has to be true until and including the point where `f₁` first becomes true;
+if `f₁` never becomes true, `f₂` must remain true forever (description from Wikipedia).
+-/
+theorem sat_release_iff'' :
+    (t ⊨ f₁ 𝐑 f₂) ↔ (t ⊨ 𝐆 f₂) ∨ ∃ n, (∀ i ≤ n, t ⊨ 𝐗ʷ(i) f₂) ∧ t ⊨ 𝐗ˢ(n) f₁ := by
+  by_cases h : t ⊨ 𝐆 f₁ᶜ
+  · rw [sat_release_iff_globally_of_globally_not h, iff_self_or]
+    rintro ⟨n, h1, h2⟩
+    simp only [push_ltl] at h
+    specialize h n (lt_of_sat_sshift h2)
+    rw [shift_sat_iff_sat_sshift] at h
+    contradiction
+  · rw [← sat_not_iff] at h
+    simp only [push_not_ltl] at h
+    rw [sat_release_iff_of_finally h, iff_or_self]
+    revert h
+    simp +contextual only [sat_globally_iff, sat_finally_iff, forall_true_iff, true_and]
+
 /-!
 ### Temporal unfolding
 -/
@@ -677,6 +842,82 @@ theorem globally_eq_and_globally : 𝐆 f = f ⊓ 𝐗ʷ (𝐆 f) := by
   conv_lhs =>
     rw [globally_eq, finally_eq_or_finally]
     simp [push_not_ltl]
+
+theorem entail_globally_imp : ⊨ 𝐆 f ⇨ f := by
+  rw [globally_eq_and_globally, inf_comm, ← himp_himp, himp_self, himp_top]
+  exact sem_entail_true
+
+theorem entail_of_globally (h : ⊨ 𝐆 f) : ⊨ f := by
+  intro t
+  exact entail_globally_imp t (h t)
+
+theorem globally_finally_iff_of_finite (h : t.Finite) : (t ⊨ 𝐆 𝐅 f) ↔ (t ⊨ 𝐅 𝐆 f) := by
+  simp [push_ltl]
+  obtain ⟨n, h1, h2⟩ := h.exists
+  simp_rw [← h2]
+  norm_cast
+  constructor
+  · intro h
+    use n - 1, (by omega)
+    intro m hm
+    obtain ⟨k, hk, hf⟩ := h (n - 1) (by omega)
+    convert hf
+    omega
+  · rintro ⟨m, hm, h2⟩ k hk
+    use n - k - 1, (by omega)
+    specialize h2 (n - m - 1) (by omega)
+    convert h2 using 2
+    omega
+
+theorem entail_fin_globally_finally_comm : ⊨ᶠ 𝐆 𝐅 f ⇔ 𝐅 𝐆 f := by
+  intro t
+  rw [sat_iff_iff]
+  exact globally_finally_iff_of_finite
+
+theorem entail_fin_finally_globally_finally_iff : ⊨ᶠ 𝐅 𝐆 𝐅 f ⇔ 𝐆 𝐅 f := by
+  intro t h
+  rw [sat_iff_iff]
+  rw [← globally_finally_iff_of_finite h, finally_finally, globally_finally_iff_of_finite h]
+
+theorem entail_fin_globally_finally_idem : ⊨ᶠ 𝐆 𝐅 𝐆 𝐅 f ⇔ 𝐆 𝐅 f := by
+  intro t h
+  rw [sat_iff_iff]
+  rw [globally_finally_iff_of_finite h, globally_globally,
+    ← globally_finally_iff_of_finite h, finally_finally]
+
+theorem entail_inf_snext_globally_finally_iff : ⊨ⁱ 𝐗ˢ 𝐆 𝐅 f ⇔ 𝐆 𝐅 f := by
+  simp +contextual [push_ltl]
+  intro t h
+  constructor
+  · intro h1 n
+    obtain ⟨m, hm⟩ := h1 n
+    use m + 1
+    convert hm using 2
+    omega
+  · intro h2 n
+    obtain ⟨m, hm⟩ := h2 (n + 1)
+    use m
+
+theorem finally_globally_finally_eq : 𝐅 𝐆 𝐅 f = 𝐆 𝐅 f := by
+  ext t
+  by_cases h : t.Finite
+  · rw [← sat_iff_iff]
+    exact entail_fin_finally_globally_finally_iff _ h
+  · rw [Trace.not_finite] at h
+    simp +contextual [push_ltl, h]
+    constructor
+    · rintro ⟨n, hn⟩ m
+      obtain ⟨k, hk⟩ := hn m
+      use n + k
+      convert hk using 2
+      omega
+    · intro h2
+      use 0
+      simpa using h2
+
+theorem globally_finally_idem : 𝐆 𝐅 𝐆 𝐅 f = 𝐆 𝐅 f := by
+  rw [finally_globally_finally_eq, globally_globally]
+
 
 /-!
 ### More semantics lemmas

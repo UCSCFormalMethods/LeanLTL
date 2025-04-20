@@ -121,6 +121,14 @@ lemma exists_unshift (t : Trace σ) (h1 : 1 < t.length) :
 lemma shift_unshift_one (s : σ) (t : Trace σ) :
     (Trace.unshift s t).shift 1 (one_lt_unshift_length _ _) = t := by simp
 
+protected theorem Finite.exists {t : Trace σ} (h : t.Finite) : ∃ n : Nat, 0 < n ∧ n = t.length := by
+  obtain ⟨n, h'⟩ := ENat.ne_top_iff_exists.mp h.ne_top
+  have := t.nempty
+  rw [← h', Nat.cast_pos] at this
+  use n
+
+protected theorem infinite.eq_top {t : Trace σ} (h : t.Infinite) : t.length = ⊤ := h
+
 @[simp] lemma not_finite {t : Trace σ} : ¬ t.Finite ↔ t.Infinite := by
   unfold Trace.Finite Trace.Infinite
   simp only [not_lt, top_le_iff]
