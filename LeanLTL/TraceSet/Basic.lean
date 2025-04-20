@@ -664,6 +664,11 @@ theorem release_eq_and_or :
     rw [release_eq_not_until_not, until_eq_or_and]
     simp only [push_not_ltl]
 
+theorem release_eq_or_and :
+    f₁ 𝐑 f₂ = (f₁ ⊓ f₂) ⊔ (f₂ ⊓ 𝐗ʷ (f₁ 𝐑 f₂)) := by
+  conv_lhs => rw [release_eq_and_or]
+  rw [inf_sup_left, inf_comm]
+
 theorem finally_eq_or_finally : 𝐅 f = f ⊔ 𝐗ˢ (𝐅 f) := by
   conv_lhs =>
     rw [finally_eq, until_eq_or_and, ← finally_eq, top_inf_eq]
