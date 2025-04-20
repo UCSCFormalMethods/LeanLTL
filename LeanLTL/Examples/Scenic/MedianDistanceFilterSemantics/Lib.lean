@@ -12,11 +12,9 @@ structure TraceState where
   N1: ℚ
   N2: ℚ
   N3: ℚ
-  deriving Inhabited
 
 structure FuncOutput where
   N3: ℚ
-  deriving Inhabited
 
 def ComponentFunc (t: TraceState) : FuncOutput :=
   let dist1 := t.N0;
@@ -27,7 +25,7 @@ def ComponentFunc (t: TraceState) : FuncOutput :=
   {N3 := (out_dist)}
 
 def CF : TraceFun TraceState FuncOutput := TraceFun.of ComponentFunc
-def CF_N3 : TraceFun TraceState ℚ := TraceFun.map (·.N3) CF
+def CF_N3 : TraceFun TraceState ℚ := TraceFun.map (·.N3) CF 
 
 -- Prop Signals
 
@@ -39,16 +37,17 @@ abbrev out_dist : TraceFun TraceState ℚ := TraceFun.of (·.N3)
 
 -- Defs
 
--- Assumptions
+-- Assumptions 
 
 abbrev assumptions : TraceSet TraceState := LLTL[⊤]
 
--- Function Properties
-abbrev F0 := LLTL[𝐆 ((← out_dist) = (← CF_N3))]
+-- Function Properties 
+abbrev F0 := LLTL[𝐆 ((←out_dist) = (←CF_N3))]
 
 abbrev fprops : TraceSet TraceState := LLTL[F0]
 
--- Guarantees
-abbrev G0 := LLTL[𝐆 ((← out_dist) = ((((← dist1) ⊔ (← dist2)) ⊓ ((← dist1) ⊔ (← dist2))) ⊓ ((← dist2) ⊔ (← dist3))))]
+-- Guarantees 
+abbrev G0 := LLTL[𝐆 (((←out_dist)) = (((((←dist1)) ⊔ ((←dist2))) ⊓ (((←dist1)) ⊔ ((←dist2)))) ⊓ (((←dist2)) ⊔ ((←dist3)))))]
 
 abbrev guarantees : TraceSet TraceState := LLTL[G0]
+

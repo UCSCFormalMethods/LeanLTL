@@ -1,10 +1,9 @@
 import LeanLTL.Examples.Scenic.MedianDistanceFilterSemantics.Lib
 
 open LeanLTL
-open LeanLTL.Notation
-open TraceSet
+open scoped LeanLTL.Notation
 
 namespace MedianDistanceFilterSemantics
 
-theorem imp_assumptions : ⊨ LLTL[(assumptions ∧ fprops) → guarantees] := by
+theorem imp_assumptions : LLTL[fprops] ⇒ LLTL[assumptions → guarantees] := by
   simp [push_ltl, CF_N3, CF, ComponentFunc]
