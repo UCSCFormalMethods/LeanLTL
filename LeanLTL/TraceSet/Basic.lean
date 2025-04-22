@@ -537,6 +537,24 @@ lemma sshift_and_distrib (n : ℕ) : 𝐗ˢ(n) (f₁ ⊓ f₂) = (𝐗ˢ(n) f₁
 lemma sshift_or_distrib (n : ℕ) : 𝐗ˢ(n) (f₁ ⊔ f₂) = (𝐗ˢ(n) f₁) ⊔ (𝐗ˢ(n) f₂) := by
   ext t; by_cases n < t.length <;> simp [push_ltl, *]
 
+lemma wshift_and_wshift (n : ℕ) : (𝐗ʷ(n) f₁) ⊓ (𝐗ʷ(n) f₂) = 𝐗ʷ(n) (f₁ ⊓ f₂) :=
+  (wshift_and_distrib n).symm
+
+lemma sshift_and_sshift (n : ℕ) : (𝐗ˢ(n) f₁) ⊓ (𝐗ˢ(n) f₂) = 𝐗ˢ(n) (f₁ ⊓ f₂) :=
+  (sshift_and_distrib n).symm
+
+lemma wshift_and_sshift (n : ℕ) : (𝐗ʷ(n) f₁) ⊓ (𝐗ˢ(n) f₂) = 𝐗ˢ(n) (f₁ ⊓ f₂) := by
+  ext t; by_cases n < t.length <;> simp [push_ltl, *]
+
+lemma sshift_and_wshift (n : ℕ) : (𝐗ˢ(n) f₁) ⊓ (𝐗ʷ(n) f₂) = 𝐗ˢ(n) (f₁ ⊓ f₂) := by
+  rw [inf_comm, wshift_and_sshift, inf_comm]
+
+lemma wshift_or_sshift (n : ℕ) : (𝐗ʷ(n) f₁) ⊔ (𝐗ˢ(n) f₂) = 𝐗ʷ(n) (f₁ ⊔ f₂) := by
+  ext t; by_cases n < t.length <;> simp [push_ltl, *]
+
+lemma sshift_or_wshift (n : ℕ) : (𝐗ˢ(n) f₁) ⊔ (𝐗ʷ(n) f₂) = 𝐗ʷ(n) (f₁ ⊔ f₂) := by
+  rw [sup_comm, wshift_or_sshift, sup_comm]
+
 lemma until_or_distrib : f₁ 𝐔 (f₂ ⊔ f₃) = (f₁ 𝐔 f₂) ⊔ (f₁ 𝐔 f₃) := by
   ext t; simp only [push_ltl, exists_or, ← exists_or, ← and_or_left]
 

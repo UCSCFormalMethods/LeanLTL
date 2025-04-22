@@ -69,6 +69,8 @@ elab "ensure_trace_fun% " t:term : term => do
   if ty.isForall then
     let fn ← mkConstWithFreshMVarLevels ``TraceFun.of
     elabAppArgs fn #[] #[.expr e] none false false
+  else if ty.isAppOf ``TraceSet then
+    mkAppM ``TraceSet.toFun #[e]
   else
     -- TODO use ensureHasType
     return e
@@ -275,7 +277,7 @@ local macro "declare_lltlv_notation " vars:ident* " : " ltl:term " => " t:term :
   let unexpandRHS ← vars.foldrM (init := unexpandRHS) fun var unexpandRHS => `(let $var:ident := stripLLTLV $var; $unexpandRHS)
   `(
   macro_rules
-    | `(LLTLV[$macroLHS]) => `(($macroRHS : TraceFun _ _))
+    | `(LLTLV[$macroLHS]) => `((ensure_trace_fun% $macroRHS : TraceFun _ _))
   @[scoped app_unexpander $c]
   aux_def unexpand : PrettyPrinter.Unexpander := fun
     | `($unexpandLHS) => $unexpandRHS
@@ -291,6 +293,7 @@ declare_lltlv_notation f g : f * g => TraceFun.mul f g
 declare_lltlv_notation f g : f / g => TraceFun.div f g
 declare_lltlv_notation f g : f ⊓ g => TraceFun.min f g
 declare_lltlv_notation f g : f ⊔ g => TraceFun.max f g
+declare_lltlv_notation f g : f < g => TraceFun.lt f g
 
 open PrettyPrinter Delaborator SubExpr
 
@@ -390,6 +393,9 @@ variable {σ : Type} (p q : TraceSet σ) (x y : TraceFun σ Nat)
 -- /-
 -- Xˢ TraceSet.exists fun y ↦ x.sget fun x ↦ TraceSet.const (x < y) : TraceSet σ
 -- -/
+
+/-- info: LLTLV[x < y - x].toFun : TraceFun σ Prop -/
+#guard_msgs in #check LLTLV[x < y - x]
 
 end Example
 
