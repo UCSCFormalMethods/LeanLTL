@@ -12,9 +12,11 @@ structure TraceState where
   N1: ℚ
   N2: ℚ
   N3: ℚ
+deriving Inhabited
 
 structure FuncOutput where
   N3: ℚ
+deriving Inhabited
 
 def ComponentFunc (t: TraceState) : FuncOutput :=
   let dist1 := t.N0;
