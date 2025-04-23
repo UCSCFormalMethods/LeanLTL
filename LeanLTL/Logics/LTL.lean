@@ -72,7 +72,7 @@ theorem equisat {σ: Type*} (f: Formula σ) (t: LTL.Trace σ) :
       trace := t.trace.shift 1 h_tl
       infinite := by simp_all
     }
-    simp_all
+    simp_rw [ih, LeanLTL.TraceSet.sshift_eq_sshift, LeanLTL.TraceSet.shift_sat_iff_sat_sshift]
   . rename_i f₁ f₂ ih₁ ih₂
     simp_all [sat, toLeanLTL, push_ltl]
 

@@ -62,14 +62,8 @@ theorem equisat {σ: Type*} (f: Formula σ) (t: LTLf.Trace σ) :
   . rename_i f₁ f₂ ih₁ ih₂
     simp_all [sat, toLeanLTL, push_ltl]
   . rename_i f ih
-    simp only [sat, toLeanLTL, push_ltl]
-    congr!
-    rename_i h_tl
-    specialize ih {
-      trace := t.trace.shift 1 h_tl
-      finite := by simp_all
-    }
-    simp_all
+    simp only [sat, toLeanLTL, push_ltl, ih, LeanLTL.TraceSet.sshift_eq_sshift]
+    rfl
   . rename_i f₁ f₂ ih₁ ih₂
     simp_all [sat, toLeanLTL, push_ltl]
 
@@ -97,7 +91,7 @@ theorem toLeanLTL_false : toLeanLTL (Formula.false : Formula σ) = TraceSet.fals
 theorem toLeanLTL_var {v : Var σ} : toLeanLTL (Formula.var v) = TraceSet.of v := rfl
 theorem toLeanLTL_not : toLeanLTL f₁.not = (toLeanLTL f₁).not := rfl
 theorem toLeanLTL_or : toLeanLTL (f₁.or f₂) = (toLeanLTL f₁).or (toLeanLTL f₂) := by
-  ext; simp [push_ltl, toLeanLTL, Formula.or]; tauto
+  ext; simp [push_ltl, toLeanLTL, Formula.or]
 theorem toLeanLTL_and : toLeanLTL (f₁.and f₂) = (toLeanLTL f₁).and (toLeanLTL f₂) := rfl
 theorem toLeanLTL_imp : toLeanLTL (f₁.imp f₂) = (toLeanLTL f₁).imp (toLeanLTL f₂) := by
   simp only [Formula.imp, toLeanLTL_or, toLeanLTL_not]
