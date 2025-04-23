@@ -32,7 +32,7 @@ abbrev params__weather__ : TraceFun TraceState ℚ := TraceFun.of (·.N6)
 
 -- Defs
 abbrev lead_dist := LLTLV[lead_distances_lead_car_]
-abbrev behind_car := LLTL[(← lead_dist) ≤ (1000)]
+abbrev behind_car := LLTLV[lead_dist ≤ (1000)]
 
 -- Top Level Assumptions
 abbrev A0 := LLTL[𝐆 (self._lane_is_not_None)]
@@ -48,15 +48,15 @@ abbrev IA2 := LLTL[((← params__weather__) = (0)) ∨ ((← params__weather__) 
 abbrev i_assumptions : TraceSet TraceState := LLTL[IA0 ∧ IA1 ∧ IA2]
 
 -- Internal Guarantees
-abbrev IG0 := LLTL[𝐆 ((behind_car) → ((((← lead_dist) - (0.1)) ≤ (← SCENIC_INTERNAL_VAR_0)) ∧ ((← SCENIC_INTERNAL_VAR_0) ≤ ((← lead_dist) + (0.1)))))]
-abbrev IG1 := LLTL[𝐆 ((¬(behind_car)) → ((← SCENIC_INTERNAL_VAR_0) > ((1000) + (0.1))))]
-abbrev IG2 := LLTL[𝐆 ((behind_car) → ((((← lead_dist) - (0.1)) ≤ (← SCENIC_INTERNAL_VAR_1)) ∧ ((← SCENIC_INTERNAL_VAR_1) ≤ ((← lead_dist) + (0.1)))))]
-abbrev IG3 := LLTL[𝐆 ((¬(behind_car)) → ((← SCENIC_INTERNAL_VAR_1) > ((1000) + (0.1))))]
+abbrev IG0 := LLTL[𝐆 ((← behind_car) → ((((← lead_dist) - (0.1)) ≤ (← SCENIC_INTERNAL_VAR_0)) ∧ ((← SCENIC_INTERNAL_VAR_0) ≤ ((← lead_dist) + (0.1)))))]
+abbrev IG1 := LLTL[𝐆 ((¬(← behind_car)) → ((← SCENIC_INTERNAL_VAR_0) > ((1000) + (0.1))))]
+abbrev IG2 := LLTL[𝐆 ((← behind_car) → ((((← lead_dist) - (0.1)) ≤ (← SCENIC_INTERNAL_VAR_1)) ∧ ((← SCENIC_INTERNAL_VAR_1) ≤ ((← lead_dist) + (0.1)))))]
+abbrev IG3 := LLTL[𝐆 ((¬(← behind_car)) → ((← SCENIC_INTERNAL_VAR_1) > ((1000) + (0.1))))]
 abbrev IG4 := LLTL[𝐆 ((← SCENIC_INTERNAL_VAR_3) = ((((← SCENIC_INTERNAL_VAR_0) ⊔ (← SCENIC_INTERNAL_VAR_1)) ⊓ ((← SCENIC_INTERNAL_VAR_0) ⊔ (← SCENIC_INTERNAL_VAR_1))) ⊓ ((← SCENIC_INTERNAL_VAR_1) ⊔ (← SCENIC_INTERNAL_VAR_2))))]
 
 abbrev i_guarantees : TraceSet TraceState := LLTL[IG0 ∧ IG1 ∧ IG2 ∧ IG3 ∧ IG4]
 
 -- Top Level Guarantees
-abbrev G0 := LLTL[𝐆 ((behind_car) → ((((← lead_dist) - (0.1)) ≤ (← SCENIC_INTERNAL_VAR_3)) ∧ ((← SCENIC_INTERNAL_VAR_3) ≤ ((← lead_dist) + (0.1)))))]
+abbrev G0 := LLTL[𝐆 ((← behind_car) → ((((← lead_dist) - (0.1)) ≤ (← SCENIC_INTERNAL_VAR_3)) ∧ ((← SCENIC_INTERNAL_VAR_3) ≤ ((← lead_dist) + (0.1)))))]
 
 abbrev guarantees : TraceSet TraceState := LLTL[G0]

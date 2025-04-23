@@ -71,6 +71,9 @@ elab "ensure_trace_fun% " t:term : term => do
     elabAppArgs fn #[] #[.expr e] none false false
   else if ty.isAppOf ``TraceSet then
     mkAppM ``TraceSet.toFun #[e]
+  else if ← Meta.isProp e then
+    let fn ← mkConstWithFreshMVarLevels ``TraceFun.const
+    elabAppArgs fn #[] #[.expr e] none false false
   else
     -- TODO use ensureHasType
     return e
@@ -284,9 +287,13 @@ local macro "declare_lltlv_notation " vars:ident* " : " ltl:term " => " t:term :
     | _ => throw ()
   )
 
+declare_lltlv_notation f : ¬ f => TraceFun.not f
 declare_lltlv_notation f : 𝐗 f => TraceFun.next f
 declare_lltlv_notation f : -f => TraceFun.neg f
 declare_lltlv_notation f : ⌈f⌉ => TraceFun.ceil f
+declare_lltlv_notation f g : f ∧ g => TraceFun.and f g
+declare_lltlv_notation f g : f ∨ g => TraceFun.or f g
+declare_lltlv_notation f g : f → g => TraceFun.imp f g
 declare_lltlv_notation f g : f + g => TraceFun.add f g
 declare_lltlv_notation f g : f - g => TraceFun.sub f g
 declare_lltlv_notation f g : f * g => TraceFun.mul f g
@@ -294,6 +301,9 @@ declare_lltlv_notation f g : f / g => TraceFun.div f g
 declare_lltlv_notation f g : f ⊓ g => TraceFun.min f g
 declare_lltlv_notation f g : f ⊔ g => TraceFun.max f g
 declare_lltlv_notation f g : f < g => TraceFun.lt f g
+declare_lltlv_notation f g : f ≤ g => TraceFun.le f g
+declare_lltlv_notation f g : f > g => TraceFun.gt f g
+declare_lltlv_notation f g : f ≥ g => TraceFun.ge f g
 
 open PrettyPrinter Delaborator SubExpr
 
@@ -394,8 +404,8 @@ variable {σ : Type} (p q : TraceSet σ) (x y : TraceFun σ Nat)
 -- Xˢ TraceSet.exists fun y ↦ x.sget fun x ↦ TraceSet.const (x < y) : TraceSet σ
 -- -/
 
-/-- info: LLTLV[x < y - x].toFun : TraceFun σ Prop -/
-#guard_msgs in #check LLTLV[x < y - x]
+/-- info: LLTLV[x < y - x ∧ y < x] : TraceFun σ Prop -/
+#guard_msgs in #check LLTLV[x < y - x ∧ y < x]
 
 end Example
 
