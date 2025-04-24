@@ -71,6 +71,14 @@ theorem _root_.Option.bind_getD_true (x? : Option α) (f : α → Option Prop) :
     (TraceFun.le f g) t = (f t).bind fun x => (g t).bind fun y => x ≤ y := by
   simp [TraceFun.le, push_ltl]
 
+theorem TraceFun.sget_le [LE α] (f g : TraceFun σ α) (p : Prop → TraceSet σ) :
+    (TraceFun.le f g).sget (fun a => p a) = f.sget fun x => g.sget fun y => p (x ≤ y) := by
+  ext t
+  have := t.inhabited
+  simp [push_ltl]
+  simp only [Option.bind_eq_some, Option.some.injEq, eq_iff_iff]
+  aesop
+
 @[push_ltl] theorem TraceFun.ge_apply [LE α] (f g : TraceFun σ α) :
     (TraceFun.ge f g) t = (f t).bind fun x => (g t).bind fun y => x ≥ y := by
   simp [TraceFun.ge, push_ltl]
