@@ -8,9 +8,10 @@ import Mathlib
 /-!
 # LTL notation
 
-This module defines common LTL-like notation.
+This module defines common LTL-like syntax, beyond the notation seen in `LeanLTL.Logics.Notation`.
 
-The `LTL[...]` macro is used to re-intepret Lean term syntax as corresponding LTL operations.
+The `LLTL[...]` macro is used to re-intepret Lean term syntax as corresponding LTL operations.
+It also supports features such as binding values (`TraceFun`s).
 
 The notations are scoped to the `LeanLTL.Notation` namespace.
 Use `open scoped LeanLTL.Notation` to enable.
@@ -186,14 +187,12 @@ macro_rules
     | `(($p))          => `(LLTL[$p])
     | `(⊤)             => `((⊤ : TraceSet _))
     | `(⊥)             => `((⊥ : TraceSet _))
+    -- Defined here instead of with `declare_lltl_notation` to avoid generating pretty printer
     | `($p → $q)       => `((LLTL[$p] ⇨ LLTL[$q] : TraceSet _))
     | `($p ↔ $q)       => `((LLTL[$p] ⇔ LLTL[$q] : TraceSet _))
     | `($p ∧ $q)       => `((LLTL[$p] ⊓ LLTL[$q] : TraceSet _))
     | `($p ∨ $q)       => `((LLTL[$p] ⊔ LLTL[$q] : TraceSet _))
     | `(¬ $p)          => `((LLTL[$p]ᶜ : TraceSet _))
-    -- -- Assume constants are TraceSet constants
-    -- | `($c:ident)      => `(ensure_trace_set% $c)
-    -- | `($c:ident $xs*) => `(ensure_trace_set% ($c $xs*))
     -- Process embedded nexts and gets and treat the result as a `Prop`.
     | _                => termToTraceSet <| ← `(ensure_trace_set% $p)
 
@@ -317,6 +316,16 @@ def delab_himp : Delab := whenPPOption getPPNotation <| whenNotPPOption getPPExp
   let stx ← annotateCurPos <| ← `($p → $q)
   `(LLTL[$stx])
 
+@[scoped app_delab bihimp]
+def delab_bihimp : Delab := whenPPOption getPPNotation <| whenNotPPOption getPPExplicit do
+  let_expr bihimp ty _ _ _ _ := (← getExpr) | failure
+  let ty ← whnfR ty
+  guard <| ty.isAppOf ``TraceSet
+  let p := stripLLTL (← withAppFn <| withAppArg delab)
+  let q := stripLLTL (← withAppArg delab)
+  let stx ← annotateCurPos <| ← `($p ↔ $q)
+  `(LLTL[$stx])
+
 @[scoped app_delab Min.min]
 def delab_inf : Delab := whenPPOption getPPNotation <| whenNotPPOption getPPExplicit do
   let_expr Min.min ty _ _ _ := (← getExpr) | failure
@@ -349,6 +358,8 @@ def delab_compl : Delab := whenPPOption getPPNotation <| whenNotPPOption getPPEx
 section Example
 variable {σ : Type} (p q : TraceSet σ) (x y : TraceFun σ Nat)
 
+set_option pp.mvars.anonymous false
+
 /-- info: LLTL[p ∧ q] : TraceSet σ -/
 #guard_msgs in #check LLTL[p ∧ q]
 /-- info: LLTL[p ∨ q] : TraceSet σ -/
@@ -357,6 +368,8 @@ variable {σ : Type} (p q : TraceSet σ) (x y : TraceFun σ Nat)
 #guard_msgs in #check LLTL[¬ p]
 /-- info: LLTL[p → q] : TraceSet σ -/
 #guard_msgs in #check LLTL[p → q]
+/-- info: LLTL[p ↔ q] : TraceSet σ -/
+#guard_msgs in #check LLTL[p ↔ q]
 /-- info: LLTL[p 𝐔 q] : TraceSet σ -/
 #guard_msgs in #check LLTL[p 𝐔 q]
 /-- info: LLTL[p 𝐑 q] : TraceSet σ -/
@@ -378,31 +391,28 @@ variable {σ : Type} (p q : TraceSet σ) (x y : TraceFun σ Nat)
 /-- info: LLTL[𝐆 (p → ¬q)] : TraceSet σ -/
 #guard_msgs in #check LLTL[𝐆 (p → ¬ q)]
 
--- #check LLTL[1 + 2 < 3]
--- #check LLTL[1 + (←ˢ x) < 3]
--- #check LLTL[(←ˢ x) + (←ˢ x) < 𝐗 (←ˢ x)]
--- /-
--- x.sget fun x_1 ↦ (X x).sget fun X_x ↦ TraceSet.const (x_1 + x_1 < X_x) : TraceSet σ
--- -/
+/-- info: TraceSet.const (1 + 2 < 3) : TraceSet ?_ -/
+#guard_msgs in #check LLTL[1 + 2 < 3]
+/-- info: x.sget fun x ↦ TraceSet.const (1 + x < 3) : TraceSet σ -/
+#guard_msgs in #check LLTL[1 + (←ˢ x) < 3]
+/--
+info: x.sget fun x_1 ↦ LLTLV[𝐗 x].sget fun «𝐗_x» ↦ TraceSet.const (x_1 + x_1 < «𝐗_x») : TraceSet σ
+-/
+#guard_msgs in #check LLTL[(←ˢ x) + (←ˢ x) < 𝐗 (←ˢ x)]
 
 /-- info: x.sget fun x ↦ y.wget fun y ↦ TraceSet.const (x = y) : TraceSet σ -/
 #guard_msgs in #check LLTL[(←ˢ x) = (←ʷ y)]
 /-- info: y.sget fun y ↦ x.wget fun x ↦ TraceSet.const (x = y) : TraceSet σ -/
 #guard_msgs in #check LLTL[(←ʷ x) = (←ˢ y)]
 
--- #check LLTL[(←ˢ x) = (←ʷ x)]
--- /-
--- x.sget fun x_1 ↦ x.wget fun x ↦ TraceSet.const (x_1 = x) : TraceSet σ
--- -/
--- #check LLTL[(←ʷ x) = (←ˢ x)]
--- /-
--- x.wget fun x_1 ↦ x.sget fun x ↦ TraceSet.const (x_1 = x) : TraceSet σ
--- -/
+/-- info: x.sget fun x_1 ↦ x.wget fun x ↦ TraceSet.const (x_1 = x) : TraceSet σ -/
+#guard_msgs in #check LLTL[(←ˢ x) = (←ʷ x)]
+/-- info: x.sget fun x_1 ↦ x.wget fun x ↦ TraceSet.const (x = x_1) : TraceSet σ -/
+#guard_msgs in #check LLTL[(←ʷ x) = (←ˢ x)]
 
--- #check LLTL[Xˢ ∃ y, (←ˢ x) < y]
--- /-
--- Xˢ TraceSet.exists fun y ↦ x.sget fun x ↦ TraceSet.const (x < y) : TraceSet σ
--- -/
+-- TODO pretty printing for exists
+/-- info: LLTL[𝐗ˢ (⨆ y, x.sget fun x ↦ TraceSet.const (x < y))] : TraceSet σ -/
+#guard_msgs in #check LLTL[𝐗ˢ (∃ y, (←ˢ x) < y)]
 
 /-- info: LLTLV[x < y - x ∧ y < x] : TraceFun σ Prop -/
 #guard_msgs in #check LLTLV[x < y - x ∧ y < x]
