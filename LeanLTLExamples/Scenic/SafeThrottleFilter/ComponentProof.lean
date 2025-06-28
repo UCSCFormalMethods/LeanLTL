@@ -1,4 +1,4 @@
-import LeanLTL.Examples.Scenic.SafeThrottleFilter.Lib
+import LeanLTLExamples.Scenic.SafeThrottleFilter.Lib
 
 open LeanLTL
 open LeanLTL.Notation

@@ -1,4 +1,4 @@
-import LeanLTL.Examples.Scenic.MedianDistanceFilterSemantics.Lib
+import LeanLTLExamples.Scenic.MedianDistanceFilterSemantics.Lib
 
 open LeanLTL
 open scoped LeanLTL.Notation

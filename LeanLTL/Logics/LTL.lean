@@ -1,53 +1,49 @@
-import LeanLTL
+import LeanLTL.TraceSet.Basic
 
-namespace LTL
+namespace LeanLTL.LTL
 
 -- Definitions taken from "Handbook of model checking", Section 2.3.1 (without past-time operators)
 -- Note: Past-time operators add no expressive power to the logic (see source)
-def Var (σ: Type*) := σ -> Prop
-structure Trace (σ: Type*) where
+def Var (σ : Type*) := σ -> Prop
+structure Trace (σ : Type*) where
   trace : LeanLTL.Trace σ
   infinite : trace.Infinite
 
 attribute [simp] Trace.infinite
 
-inductive Formula (σ: Type*) where
-  | var (v: (Var σ))
-  | not (f: Formula σ)
-  | or (f₁ f₂: Formula σ)
-  | next (f: Formula σ)
-  | until (f₁ f₂: Formula σ)
+inductive Formula (σ : Type*) where
+  | var (v : (Var σ))
+  | not (f : Formula σ)
+  | or (f₁ f₂ : Formula σ)
+  | next (f : Formula σ)
+  | until (f₁ f₂ : Formula σ)
 
-def sat {σ: Type*} (t: Trace σ) (f: Formula σ) : Prop :=
+def sat {σ : Type*} (t : Trace σ) (f : Formula σ) : Prop :=
   match f with
   | Formula.var v        => v (t.trace.toFun 0 (by simp))
-  | Formula.not f        => ¬ (sat t f)
-  | Formula.or f₁ f₂     => (sat t f₁) ∨ (sat t f₂)
+  | Formula.not f        => ¬ sat t f
+  | Formula.or f₁ f₂     => sat t f₁ ∨ sat t f₂
   | Formula.next f       =>
     let next_t := {
-      trace := (t.trace.shift 1 (by
-        -- @ Kyle, can we reduce this to just simp?
-        have := LeanLTL.Trace.infinite_lt_length t.trace t.infinite 1
-        simp_all
-      ))
+      trace := t.trace.shift 1 (by simp)
       infinite := by simp
     }
-    (sat next_t f)
+    sat next_t f
   | Formula.until f₁ f₂  =>
     ∃ i ≥ 0,
     let t_i := {
-      trace := (t.trace.shift i (by simp))
+      trace := t.trace.shift i (by simp)
       infinite := by simp
     }
     (∀ j < i,
-    let t_j := {
-      trace := (t.trace.shift j (by simp))
-      infinite := by simp
-    }
-    (sat t_j f₁))
-    ∧ (sat t_i f₂)
+      let t_j := {
+        trace := t.trace.shift j (by simp)
+        infinite := by simp
+      }
+      sat t_j f₁)
+    ∧ sat t_i f₂
 
-def toLeanLTL {σ: Type*} (f: Formula σ) : (LeanLTL.TraceSet σ) :=
+def toLeanLTL {σ : Type*} (f : Formula σ) : LeanLTL.TraceSet σ :=
   match f with
   | Formula.var v        => LeanLTL.TraceSet.of v
   | Formula.not f        => LeanLTL.TraceSet.not (toLeanLTL f)
@@ -55,25 +51,24 @@ def toLeanLTL {σ: Type*} (f: Formula σ) : (LeanLTL.TraceSet σ) :=
   | Formula.next f       => LeanLTL.TraceSet.snext (toLeanLTL f)
   | Formula.until f₁ f₂  => LeanLTL.TraceSet.until (toLeanLTL f₁) (toLeanLTL f₂)
 
-theorem equisat {σ: Type*} (f: Formula σ) (t: LTL.Trace σ) :
-  (LTL.sat t f) ↔ (t.trace ⊨ (toLeanLTL f)) := by
+theorem equisat {σ : Type*} (f : Formula σ) (t : LTL.Trace σ) :
+    LTL.sat t f ↔ (t.trace ⊨ toLeanLTL f) := by
   induction f generalizing t
-  . rename_i v
+  next v =>
     simp [sat, toLeanLTL, push_ltl, LeanLTL.TraceSet.of]
-  . rename_i f ih
+  next f ih =>
     simp_all [sat, toLeanLTL, push_ltl]
-  . rename_i f₁ f₂ ih₁ ih₂
+  next f₁ f₂ ih₁ ih₂ =>
     simp_all [sat, toLeanLTL, push_ltl]
-  . rename_i f ih
+  next f ih =>
     simp only [sat, toLeanLTL, push_ltl]
-
     have h_tl : 1 < t.trace.length := LeanLTL.Trace.infinite_lt_length t.trace t.infinite 1
     specialize ih {
       trace := t.trace.shift 1 h_tl
       infinite := by simp_all
     }
     simp_rw [ih, LeanLTL.TraceSet.sshift_eq_sshift, LeanLTL.TraceSet.shift_sat_iff_sat_sshift]
-  . rename_i f₁ f₂ ih₁ ih₂
+  next f₁ f₂ ih₁ ih₂ =>
     simp_all [sat, toLeanLTL, push_ltl]
 
 /-!

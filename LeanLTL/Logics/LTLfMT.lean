@@ -1,6 +1,12 @@
-import LeanLTL
+import LeanLTL.TraceSet.Basic
 
-namespace LTLfMT
+/-!
+# Linear temporal logic over finite traces modulo theories (LTLfMT)
+
+*Note:* This file is incomplete
+-/
+
+namespace LeanLTL.LTLfMT
 variable {σ α: Type*}
 
 -- Definitions taken from "Linear Temporal Logic Modulo Theories over Finite Traces" by Giatti et al.
@@ -170,7 +176,8 @@ def toLeanLTL_SigmaTerm (s: SigmaTerm σ α)
   | SigmaTerm.wnext v               => LeanLTL.TraceFun.next (LeanLTL.TraceFun.of v)
 
 def toLeanLTL_Lambda (l: Lambda σ α)
-  (fs: (n: ℕ) → FuncConst n → (FuncVal n α)) (ps: (n: ℕ) → PredConst n → (PredVal n α)) : (LeanLTL.TraceSet σ) :=
+    (fs: (n: ℕ) → FuncConst n → (FuncVal n α)) (ps: (n: ℕ) → PredConst n → (PredVal n α)) : (LeanLTL.TraceSet σ) :=
+  open scoped Classical in
   match l with
   | Lambda.alpha (n:=n) pc args   =>
     { sat := fun t =>

@@ -51,6 +51,13 @@ theorem isSome_toFun_zero (t : Trace σ) : (t.toFun? 0).isSome := by simp
     simp [hi] at this
     simp [this]
 
+protected lemma ext' [Inhabited σ] {t t' : Trace σ}
+    (hLen : t.length = t'.length)
+    (hToFun : ∀ i, t.toFun! i = t'.toFun! i) :
+    t = t' := by
+  apply Trace.ext hLen
+  simp [hToFun]
+
 @[simp] lemma singleton_length (s : σ) : (Trace.singleton s).length = 1 := rfl
 
 @[simp] theorem shift_length (t : Trace σ) (n : ℕ) (h : n < t.length) :

@@ -1,5 +1,7 @@
 import LeanLTL
 
+namespace LeanLTL.Examples
+
 open LeanLTL
 open scoped LeanLTL.Notation
 
@@ -55,7 +57,7 @@ abbrev G_OneLightGreen    := LLTL[𝐆 (TL1Green ↔ ¬TL2Green)]
 abbrev G_F_Green          := LLTL[(𝐆 (𝐅 TL1Green)) ∧ (𝐆 (𝐅 TL2Green))]
 
 -- Example Proofs
-theorem Satisfies_G_OneLightGreen : TLBaseProperties ⇒ⁱ G_OneLightGreen := by
+theorem Satisfies_G_OneLightGreen : ⊨ⁱ LLTL[TLBaseProperties → G_OneLightGreen] := by
   simp [TLBaseProperties, TraceSet.sem_imp_inf_iff, TraceSet.sat_imp_iff]
   intro t h_t_inf h
   simp [TraceSet.sat_and_iff] at h

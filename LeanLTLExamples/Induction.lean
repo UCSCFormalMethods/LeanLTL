@@ -1,5 +1,7 @@
 import LeanLTL
 
+namespace LeanLTL.Examples
+
 open LeanLTL
 open scoped LeanLTL.Notation
 

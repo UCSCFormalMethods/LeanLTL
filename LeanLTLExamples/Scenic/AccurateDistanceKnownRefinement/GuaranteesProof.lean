@@ -1,4 +1,4 @@
-import LeanLTL.Examples.Scenic.AccurateDistanceKnownRefinement.Lib
+import LeanLTLExamples.Scenic.AccurateDistanceKnownRefinement.Lib
 
 open LeanLTL
 open LeanLTL.Notation

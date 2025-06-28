@@ -1,4 +1,4 @@
-import LeanLTL.Examples.Scenic.KeepsDistanceRefinement.Lib
+import LeanLTLExamples.Scenic.KeepsDistanceRefinement.Lib
 
 open LeanLTL
 open LeanLTL.Notation
@@ -107,7 +107,7 @@ lemma gt_bd_safety : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 (((← lea
 
   linarith
 
-lemma le_bd_imp_bc : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 (((← lead_dist) ≤ (← buffer_dist)) → behind_car)] := by
+lemma le_bd_imp_bc : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 (((← lead_dist) ≤ (← buffer_dist)) → (← behind_car))] := by
   -- Setup
   intro t h
   have a_ig := h
@@ -118,11 +118,13 @@ lemma le_bd_imp_bc : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 (((← lea
   simp [sat_globally_iff, sat_wshift_iff, sat_imp_iff]
   intro n h_n h
   simp [push_ltl] at h ⊢
+  refine ⟨_, Iff.rfl, ?_⟩
 
   by_cases h_sup : t.shift n h_n ⊨ LLTL[((← max_rdc_delta) + (← rel_dist_covered)) ≤ 0] <;> simp [push_ltl] at h_sup
   . have : t.shift n h_n ⊨ LLTL[(0 ⊔ ((← max_rdc_delta) + (← rel_dist_covered))) = 0] := by simp [push_ltl]; trivial
     simp [push_ltl, -sup_eq_left] at this
     simp [this] at h
+    simp
     linarith
 
   have : t.shift n h_n ⊨ LLTL[(0 ⊔ ((← max_rdc_delta) + (← rel_dist_covered))) = ((← max_rdc_delta) + (← rel_dist_covered))] := by
@@ -153,7 +155,7 @@ lemma le_bd_imp_bc : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 (((← lea
 
   interval_cases using ST_bound1, ST_bound2 <;> linarith
 
-lemma le_nbc_imp_ld_bd : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 ((𝐗ˢ ((← lead_dist) ≤ (← buffer_dist))) → (behind_car))] := by
+lemma le_nbc_imp_ld_bd : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 ((𝐗ˢ ((← lead_dist) ≤ (← buffer_dist))) → (← behind_car))] := by
   -- Setup
   intro t h
   have a_ig := h
@@ -205,6 +207,7 @@ lemma le_nbc_imp_ld_bd : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 ((𝐗
   revert hA1_1 hA2_1 hA1_2 hA2_2 h_bc hA6
   refold_let N4 XN4 XN3 XN5
   intro hA1_1 hA2_1 hA1_2 hA2_2 h_bc hA6
+  refine ⟨_, Iff.rfl, ?_⟩
 
   simp [hA6] at h_bc
 
