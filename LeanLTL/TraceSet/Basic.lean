@@ -916,6 +916,10 @@ theorem entail_inf_snext_globally_finally_iff : ⊨ⁱ 𝐗ˢ 𝐆 𝐅 f ⇔ �
     obtain ⟨m, hm⟩ := h2 (n + 1)
     use m
 
+theorem entail_inf_wnext_finally_globally_iff : ⊨ⁱ 𝐗ʷ 𝐅 𝐆 f ⇔ 𝐅 𝐆 f := by
+  simpa only [← not_globally, ← not_finally, ← not_wshift, compl_bihimp_compl]
+    using entail_inf_snext_globally_finally_iff (f := fᶜ)
+
 theorem finally_globally_finally_eq : 𝐅 𝐆 𝐅 f = 𝐆 𝐅 f := by
   ext t
   by_cases h : t.Finite
@@ -936,6 +940,12 @@ theorem finally_globally_finally_eq : 𝐅 𝐆 𝐅 f = 𝐆 𝐅 f := by
 theorem globally_finally_idem : 𝐆 𝐅 𝐆 𝐅 f = 𝐆 𝐅 f := by
   rw [finally_globally_finally_eq, globally_globally]
 
+theorem globally_finally_globally_eq : 𝐆 𝐅 𝐆 f = 𝐅 𝐆 f := by
+  simpa only [← not_globally, ← not_finally, compl_inj_iff]
+    using finally_globally_finally_eq (f := fᶜ)
+
+theorem finally_globally_idem : 𝐅 𝐆 𝐅 𝐆 f = 𝐅 𝐆 f := by
+  rw [globally_finally_globally_eq, finally_finally]
 
 /-!
 ### More semantics lemmas
