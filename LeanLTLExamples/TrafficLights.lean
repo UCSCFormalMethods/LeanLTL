@@ -30,22 +30,22 @@ abbrev max_departs : ℕ := 3
 abbrev TL1StartGreen    := LLTL[TL1Green]
 abbrev TL2StartRed      := LLTL[¬TL2Green]
 
-abbrev TL1ToTL2Green    := LLTL[𝐆 ((TL1Green ∧ ((← TL1Queue) = 0)) → (𝐗ˢ (¬TL1Green ∧ TL2Green)))]
-abbrev TL2ToTL1Green    := LLTL[𝐆 ((TL2Green ∧ ((← TL2Queue) = 0)) → (𝐗ˢ (TL1Green ∧ ¬ TL2Green)))]
-abbrev TL1StayGreen     := LLTL[𝐆 ((TL1Green ∧ ((← TL1Queue) ≠ 0)) → (𝐗ˢ (TL1Green ∧ ¬ TL2Green)))]
-abbrev TL2StayGreen     := LLTL[𝐆 ((TL2Green ∧ ((← TL2Queue) ≠ 0)) → (𝐗ˢ (¬ TL1Green ∧ TL2Green)))]
+abbrev TL1ToTL2Green    := LLTL[𝐆 ((TL1Green ∧ ((←ˢ TL1Queue) = 0)) → (𝐗ˢ (¬TL1Green ∧ TL2Green)))]
+abbrev TL2ToTL1Green    := LLTL[𝐆 ((TL2Green ∧ ((←ˢ TL2Queue) = 0)) → (𝐗ˢ (TL1Green ∧ ¬ TL2Green)))]
+abbrev TL1StayGreen     := LLTL[𝐆 ((TL1Green ∧ ((←ˢ TL1Queue) ≠ 0)) → (𝐗ˢ (TL1Green ∧ ¬ TL2Green)))]
+abbrev TL2StayGreen     := LLTL[𝐆 ((TL2Green ∧ ((←ˢ TL2Queue) ≠ 0)) → (𝐗ˢ (¬ TL1Green ∧ TL2Green)))]
 
-abbrev TL1GreenDeparts  := LLTL[𝐆 (TL1Green → ((← TL1Departs) = max_departs))]
-abbrev TL1RedDeparts    := LLTL[𝐆 (¬TL1Green → ((← TL1Departs) = 0))]
-abbrev TL2GreenDeparts  := LLTL[𝐆 (TL2Green → ((← TL2Departs) = max_departs))]
-abbrev TL2RedDeparts    := LLTL[𝐆 (¬TL2Green → ((← TL2Departs) = 0))]
+abbrev TL1GreenDeparts  := LLTL[𝐆 (TL1Green → ((←ˢ TL1Departs) = max_departs))]
+abbrev TL1RedDeparts    := LLTL[𝐆 (¬TL1Green → ((←ˢ TL1Departs) = 0))]
+abbrev TL2GreenDeparts  := LLTL[𝐆 (TL2Green → ((←ˢ TL2Departs) = max_departs))]
+abbrev TL2RedDeparts    := LLTL[𝐆 (¬TL2Green → ((←ˢ TL2Departs) = 0))]
 
-abbrev TL1ArrivesBounds := LLTL[𝐆 (0 ≤ (← TL1Arrives) ∧ (← TL1Arrives) ≤ max_arrives)]
-abbrev TL2ArrivesBounds := LLTL[𝐆 (0 ≤ (← TL2Arrives) ∧ (← TL2Arrives) ≤ max_arrives)]
+abbrev TL1ArrivesBounds := LLTL[𝐆 (0 ≤ (←ˢ TL1Arrives) ∧ (←ˢ TL1Arrives) ≤ max_arrives)]
+abbrev TL2ArrivesBounds := LLTL[𝐆 (0 ≤ (←ˢ TL2Arrives) ∧ (←ˢ TL2Arrives) ≤ max_arrives)]
 
 -- Note: Queues are defined as naturals, and so won't go negative if departures exceed queue size + arrivals
-abbrev TL1QueueNext     := LLTL[𝐆 ((𝐗 (← TL1Queue)) = (← TL1Queue) + (← TL1Arrives) - (← TL1Departs))]
-abbrev TL2QueueNext     := LLTL[𝐆 ((𝐗 (← TL2Queue)) = (← TL2Queue) + (← TL2Arrives) - (← TL2Departs))]
+abbrev TL1QueueNext     := LLTL[𝐆 ((𝐗 (←ˢ TL1Queue)) = (←ˢ TL1Queue) + (←ˢ TL1Arrives) - (←ˢ TL1Departs))]
+abbrev TL2QueueNext     := LLTL[𝐆 ((𝐗 (←ˢ TL2Queue)) = (←ˢ TL2Queue) + (←ˢ TL2Arrives) - (←ˢ TL2Departs))]
 
 abbrev TLBaseProperties := LLTL[TL1StartGreen ∧ TL2StartRed ∧ TL1ToTL2Green ∧ TL2ToTL1Green
                             ∧ TL1StayGreen ∧ TL2StayGreen ∧ TL1GreenDeparts ∧ TL1RedDeparts
@@ -58,7 +58,7 @@ abbrev G_F_Green          := LLTL[(𝐆 (𝐅 TL1Green)) ∧ (𝐆 (𝐅 TL2Gree
 
 -- Example Proofs
 theorem Satisfies_G_OneLightGreen : ⊨ⁱ LLTL[TLBaseProperties → G_OneLightGreen] := by
-  simp [TLBaseProperties, TraceSet.sem_imp_inf_iff, TraceSet.sat_imp_iff]
+  simp [TLBaseProperties]
   intro t h_t_inf h
   simp [TraceSet.sat_and_iff] at h
   rcases h with ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
@@ -119,16 +119,17 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
 
     -- Establish that other light must currently be green
     have h_f_one_green := Satisfies_G_OneLightGreen
-    simp [TraceSet.sem_imp_inf] at h_f_one_green
     specialize h_f_one_green t h_t_inf assumptions
-    simp [push_ltl] at h_f_one_green
+    rw [TraceSet.sat_globally_iff] at h_f_one_green
     have h_other_green := h_f_one_green n h_n
+    rw [TraceSet.sat_iff_iff] at h_other_green
+    rw [TraceSet.sat_not_iff] at h_other_green
     simp [h_not_green] at h_other_green
 
     -- Establish that the other light must eventually be red
     have h_f_other_red : (t.shift n h_n) ⊨ LLTL[𝐅 (¬TL2Green)] := by
       simp [push_ltl]
-      have : ∃ i, (t.shift (n + i) (by simp_all)) ⊨ LLTL[(← TL2Queue) = 0] := by
+      have : ∃ i, (t.shift (n + i) (by simp_all)) ⊨ LLTL[(←ˢ TL2Queue) = 0] := by
         by_contra! h
         simp [push_ltl] at h
         -- TL2Queue not zero for all time, so TL2Green must remain true
@@ -154,7 +155,7 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
         specialize h9 (n + i) (this _)
         omega
       let i₀ := by classical exact Nat.find this
-      have fact1 : (t.shift (n+i₀) (by simp_all)) ⊨ LLTL[(← TL2Queue) = 0] := by
+      have fact1 : (t.shift (n+i₀) (by simp_all)) ⊨ LLTL[(←ˢ TL2Queue) = 0] := by
         classical
         exact Nat.find_spec this
       have fact2 : ∀ i ≤ i₀, (t.shift (n + i) (by simp_all)) ⊨ LLTL[TL2Green] := by
@@ -166,7 +167,7 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
           specialize ih (by omega)
           classical
           have := Nat.find_min this h
-          simp [push_ltl, h_t_inf] at this
+          simp [push_ltl] at this
           simp [push_ltl, h_t_inf] at h6
           specialize h6 (n + i) ih this
           convert h6.2 using 2
@@ -177,7 +178,7 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
       simp [push_ltl] at h4
       specialize h4 (n + i₀)
       specialize fact2 i₀ (by simp)
-      simp [push_ltl, h_t_inf] at fact1
+      simp [push_ltl] at fact1
       simp [*] at h4
       obtain ⟨_, h4⟩ := h4
       ring_nf at h4 ⊢
@@ -188,7 +189,7 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
     use n_1
     use h_n_1_tl
     have := h_f_one_green (n_1 + n) (by simp_all)
-    simp_all
+    simp_all [TraceSet.sat_iff_iff, TraceSet.sat_not_iff]
   . simp [push_ltl]
     intro n h_n
     -- Discharge trivial case where light is currently green
@@ -200,16 +201,17 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
 
     -- Establish that other light must currently be green
     have h_f_one_green := Satisfies_G_OneLightGreen
-    simp [TraceSet.sem_imp_inf] at h_f_one_green
     specialize h_f_one_green t h_t_inf assumptions
-    simp [push_ltl] at h_f_one_green
+    rw [TraceSet.sat_globally_iff] at h_f_one_green
     have h_other_green := h_f_one_green n h_n
+    rw [TraceSet.sat_iff_iff] at h_other_green
+    rw [TraceSet.sat_not_iff] at h_other_green
     simp [h_not_green] at h_other_green
 
     -- Establish that the other light must eventually be red
     have h_f_other_red : (t.shift n h_n) ⊨ LLTL[𝐅 (¬TL1Green)] := by
       simp [push_ltl]
-      have : ∃ i, (t.shift (n + i) (by simp_all)) ⊨ LLTL[(← TL1Queue) = 0] := by
+      have : ∃ i, (t.shift (n + i) (by simp_all)) ⊨ LLTL[(←ˢ TL1Queue) = 0] := by
         by_contra! h
         simp [push_ltl] at h
         -- TL1Queue not zero for all time, so TL1Green must remain true
@@ -237,7 +239,7 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
         specialize h7 (n + i) (this _)
         omega
       let i₀ := by classical exact Nat.find this
-      have fact1 : (t.shift (n+i₀) (by simp_all)) ⊨ LLTL[(← TL1Queue) = 0] := by
+      have fact1 : (t.shift (n+i₀) (by simp_all)) ⊨ LLTL[(←ˢ TL1Queue) = 0] := by
         classical
         exact Nat.find_spec this
       have fact2 : ∀ i ≤ i₀, (t.shift (n + i) (by simp_all)) ⊨ LLTL[TL1Green] := by
@@ -249,7 +251,7 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
           specialize ih (by omega)
           classical
           have := Nat.find_min this h
-          simp [push_ltl, h_t_inf] at this
+          simp [push_ltl] at this
           simp [push_ltl, h_t_inf] at h5
           specialize h5 (n + i) ih this
           convert h5.2 using 2
@@ -261,9 +263,7 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
       simp [push_ltl] at h3
       specialize h3 (n + i₀)
       specialize fact2 i₀ (by simp)
-      simp [push_ltl, h_t_inf] at fact1
-      specialize h_f_one_green (n+i₀) (by simp_all)
-      simp [fact2] at h_f_one_green
+      simp [push_ltl] at fact1
       simp [*] at h3
       obtain ⟨_, h3⟩ := h3
       ring_nf at h3 ⊢
@@ -274,4 +274,4 @@ theorem Satisifies_G_F_Green : TLBaseProperties ⇒ⁱ G_F_Green := by
     use n_1
     use h_n_1_tl
     have := h_f_one_green (n_1 + n) (by simp_all)
-    simp_all
+    simp_all [TraceSet.sat_iff_iff, TraceSet.sat_not_iff]

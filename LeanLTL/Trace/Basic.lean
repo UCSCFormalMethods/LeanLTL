@@ -70,7 +70,7 @@ lemma one_lt_unshift_length (s : σ) (t : Trace σ) : 1 < (Trace.unshift s t).le
   have := t.nempty
   revert this
   cases t.length
-  · intro; apply ENat.coe_lt_top
+  · intro; apply ENat.natCast_lt_top
   · norm_cast; simp
 
 lemma singleton_toFun_zero_eq (s : σ) : (Trace.singleton s).toFun 0 = s := rfl
@@ -99,12 +99,7 @@ lemma exists_unshift (t : Trace σ) (h1 : 1 < t.length) :
   use t.toFun 0
   use t.shift 1 h1
   ext i
-  · revert h1
-    simp only [unshift_length, shift_length, Nat.cast_one]
-    cases t.length
-    · simp
-    · norm_cast
-      omega
+  · exact (tsub_add_cancel_of_le h1.le).symm
   · cases i <;> rfl
 
 @[simp] lemma shift_zero (t : Trace σ) : t.shift 0 t.nempty = t := by simp [Trace.shift]
@@ -121,12 +116,19 @@ lemma exists_unshift (t : Trace σ) (h1 : 1 < t.length) :
   · revert h
     simp
     cases t.length
-    · simp; change ¬ (n + 1 : ℕ) = (⊤ : ℕ∞); apply ENat.coe_ne_top
+    · simp
     · norm_cast; omega
   · rfl
 
 lemma shift_unshift_one (s : σ) (t : Trace σ) :
-    (Trace.unshift s t).shift 1 (one_lt_unshift_length _ _) = t := by simp
+    (Trace.unshift s t).shift 1
+      (by simpa only [Nat.cast_one] using one_lt_unshift_length s t) = t := by
+  simp
+
+@[simp] lemma shift_unshift_one_of_lt (s : σ) (t : Trace σ)
+    (h : (1 : ℕ) < (Trace.unshift s t).length) :
+    (Trace.unshift s t).shift 1 h = t := by
+  simp
 
 protected theorem Finite.exists {t : Trace σ} (h : t.Finite) : ∃ n : Nat, 0 < n ∧ n = t.length := by
   obtain ⟨n, h'⟩ := ENat.ne_top_iff_exists.mp h.ne_top
@@ -144,16 +146,13 @@ protected theorem infinite.eq_top {t : Trace σ} (h : t.Infinite) : t.length = �
   rw [← not_finite, not_not]
 
 @[simp] lemma singleton_finite (s : σ) : (Trace.singleton s).Finite :=
-  ENat.coe_lt_top _
+  ENat.natCast_lt_top _
 
 @[simp] lemma infinite_shift_iff (t : Trace σ) {i} {h} : (Trace.shift t i h).Infinite ↔ t.Infinite := by
   simp [Trace.Infinite]
 
 @[simp] lemma infinite_unshift_iff (s : σ) (t : Trace σ) : (Trace.unshift s t).Infinite ↔ t.Infinite := by
   simp [Trace.Infinite]
-  cases t.length
-  · simp
-  · norm_cast; simp only [ENat.coe_ne_top]
 
 @[simp] lemma infinite_lt_length (t : Trace σ ) (h_t_inf: t.Infinite) (n: ℕ) : n < t.length := by
   unfold Trace.Infinite at h_t_inf
@@ -195,13 +194,13 @@ theorem unshift_induction {p : (t : Trace σ) → t.Finite → Prop}
     . rename_i h2 i h3 ih
       simp_all only [Nat.cast_add, Nat.cast_one]
       norm_cast at *
-      simp_all only [add_right_eq_self, one_ne_zero, IsEmpty.forall_iff, Nat.cast_add, Nat.cast_one]
+      simp_all only [Nat.cast_add, Nat.cast_one]
       have h4 := exists_unshift t (by rw [h1]; norm_cast; linarith)
       obtain ⟨s, t', h4⟩ := h4
       subst t
       apply hind
       refine ih t' ((finite_unshift_iff s t').mp hfin) ?_
-      . simp_all only [unshift_length]
+      . simp_all only
         cases h5:  t'.length
         . simp_all [Trace.Finite]
         . simp_all only [Nat.cast_inj]
@@ -233,7 +232,7 @@ private lemma shift_shift_aux {t : Trace σ} {m n : ℕ}
   rw [shift_length] at h₂
   generalize t.length = k at *
   induction k
-  . simp only [ENat.coe_lt_top]
+  . simp only [ENat.natCast_lt_top]
   . norm_cast at *
     omega
 
@@ -265,6 +264,15 @@ lemma toFun_unshift_succ (s : σ) (t : Trace σ) (i : ℕ) (h) :
 @[simp]
 lemma toFun!_shift [Inhabited σ] (t : Trace σ) (i j : ℕ) (h) :
     (t.shift i h).toFun! j = t.toFun! (j + i) := rfl -- (!)
+
+lemma toFun!_shift_independent (t : Trace σ) (i j : ℕ) (h)
+    (h' : j < (t.shift i h).length) (inst₁ inst₂ : Inhabited σ) :
+    @Trace.toFun! σ inst₁ (t.shift i h) j = @Trace.toFun! σ inst₂ t (j + i) := by
+  calc
+    _ = (t.shift i h).toFun j h' :=
+      (@toFun_apply_eq_toFun! σ inst₁ (t.shift i h) j h').symm
+    _ = t.toFun (j + i) (shift_shift_aux h h') := toFun_shift t i j h h'
+    _ = _ := @toFun_apply_eq_toFun! σ inst₂ t (j + i) (shift_shift_aux h h')
 
 @[simp]
 lemma toFun!_unshift_zero [Inhabited σ] (s : σ) (t : Trace σ) :

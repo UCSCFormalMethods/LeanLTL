@@ -44,12 +44,12 @@ abbrev out_dist : TraceFun TraceState ℚ := TraceFun.of (·.N3)
 abbrev assumptions : TraceSet TraceState := LLTL[⊤]
 
 -- Function Properties 
-abbrev F0 := LLTL[𝐆 ((←out_dist) = (←CF_N3))]
+abbrev F0 := LLTL[𝐆 ((←ˢout_dist) = (←ˢCF_N3))]
 
 abbrev fprops : TraceSet TraceState := LLTL[F0]
 
 -- Guarantees 
-abbrev G0 := LLTL[𝐆 (((←out_dist)) = (((((←dist1)) ⊔ ((←dist2))) ⊓ (((←dist1)) ⊔ ((←dist2)))) ⊓ (((←dist2)) ⊔ ((←dist3)))))]
+abbrev G0 := LLTL[𝐆 (((←ˢout_dist)) = (((((←ˢdist1)) ⊔ ((←ˢdist2))) ⊓ (((←ˢdist1)) ⊔ ((←ˢdist2)))) ⊓ (((←ˢdist2)) ⊔ ((←ˢdist3)))))]
 
 abbrev guarantees : TraceSet TraceState := LLTL[G0]
 

@@ -62,7 +62,8 @@ theorem equisat {σ : Type*} (f : Formula σ) (t : LTL.Trace σ) :
     simp_all [sat, toLeanLTL, push_ltl]
   next f ih =>
     simp only [sat, toLeanLTL, push_ltl]
-    have h_tl : 1 < t.trace.length := LeanLTL.Trace.infinite_lt_length t.trace t.infinite 1
+    have h_tl : (1 : ℕ) < t.trace.length :=
+      LeanLTL.Trace.infinite_lt_length t.trace t.infinite 1
     specialize ih {
       trace := t.trace.shift 1 h_tl
       infinite := by simp_all

@@ -1,6 +1,18 @@
 # LeanLTL
 A unifying framework for linear temporal logics in Lean
 
+# Building
+
+The project is pinned to Lean 4.33.1 and the matching mathlib release. With
+[`elan`](https://github.com/leanprover/elan) installed, run:
+
+```sh
+lake exe cache get
+lake build
+```
+
+The default build checks both the core `LeanLTL` library and all `LeanLTLExamples`.
+
 # Repository structure
 The core library implementation can be found under the `LeanLTL/Trace`, `LeanLTL/TraceFun`, and `LeanLTL/TraceSet` directories. Various automation and utilities can be found under `LeanLTL/Tactics` and `LeanLTL/Utils`.
 
