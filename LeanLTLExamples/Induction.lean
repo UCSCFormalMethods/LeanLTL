@@ -22,7 +22,7 @@ example {σ : Type} (n : σ → ℕ) :
     omega
 
 example {σ : Type} (n : σ → ℕ) :
-    ⊨ LLTL[𝐆 ((← n) < (← 𝐗 n)) → ∀ m, 𝐅 (m < (←ʷ n))] := by
+    ⊨ LLTL[𝐆 ((←ˢ n) < (←ˢ 𝐗 n)) → ∀ m, 𝐅 (m < (←ʷ n))] := by
   simp +contextual [push_ltl]
   intro t ht n
   induction n with

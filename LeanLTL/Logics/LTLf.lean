@@ -26,7 +26,7 @@ def sat {σ : Type*} (t : Trace σ) (f : Formula σ) : Prop :=
   | Formula.snext f      =>
     ∃ (h_not_last : 1 < t.trace.length),
     let next_t := {
-      trace := t.trace.shift 1 h_not_last
+      trace := t.trace.shift 1 (by simpa only [Nat.cast_one] using h_not_last)
       finite := by simp
     }
     sat next_t f

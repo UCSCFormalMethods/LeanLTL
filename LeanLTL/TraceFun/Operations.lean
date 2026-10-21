@@ -76,7 +76,7 @@ theorem TraceFun.sget_le [LE α] (f g : TraceFun σ α) (p : Prop → TraceSet �
   ext t
   have := t.inhabited
   simp [push_ltl]
-  simp only [Option.bind_eq_some, Option.some.injEq, eq_iff_iff]
+  simp only [Option.bind_eq_some_iff, Option.some.injEq, eq_iff_iff]
   aesop
 
 @[push_ltl] theorem TraceFun.ge_apply [LE α] (f g : TraceFun σ α) :

@@ -8,7 +8,7 @@ namespace AccurateDistanceKnownRefinement
 
 theorem imp_guarantees : ⊨ LLTL[(assumptions ∧ i_guarantees) → guarantees] := by
   simp [assumptions, i_guarantees, TraceSet.sem_entail_iff, TraceSet.sat_imp_iff,
-    A0, IA0, IA1, IG0, IG1, IG2, G0, sat_and_iff]
+    A0, IG0, IG1, IG2, sat_and_iff]
   intro t hA0 hA1 hIG0 hIG1 hIG2
   simp [sat_globally_iff, sat_wshift_iff, sat_imp_iff] at *
 

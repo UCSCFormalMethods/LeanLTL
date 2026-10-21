@@ -90,7 +90,6 @@ where
   go (xstack : List Syntax) (stx : Syntax) : MacroM Syntax := do
     match stx with
     | `(←ˢ%$tk $x) => `(←ˢ%$tk $(← wrapXs xstack x))
-    | `(←%$tk $x)  => `(←%$tk $(← wrapXs xstack x))
     | `(←ʷ%$tk $x) => `(←ʷ%$tk $(← wrapXs xstack x))
     | `(𝐗%$tk $stx') =>
       let res ← go (tk :: xstack) stx'
@@ -143,7 +142,6 @@ where
     match stx with
     | `(←ˢ%$tk $x) => mkBinderFor true tk x
     | `(←ʷ%$tk $x) => mkBinderFor false tk x
-    | `(←%$tk $x)  => mkBinderFor true tk x
     | _ =>
       if let .node _ k args := stx then
         let args ← args.mapM go
@@ -189,7 +187,7 @@ macro_rules
     | `(⊥)             => `((⊥ : TraceSet _))
     -- Defined here instead of with `declare_lltl_notation` to avoid generating pretty printer
     | `($p → $q)       => `((LLTL[$p] ⇨ LLTL[$q] : TraceSet _))
-    | `($p ↔ $q)       => `((LLTL[$p] ⇔ LLTL[$q] : TraceSet _))
+    | `($p ↔ $q)       => `(bihimp LLTL[$p] LLTL[$q])
     | `($p ∧ $q)       => `((LLTL[$p] ⊓ LLTL[$q] : TraceSet _))
     | `($p ∨ $q)       => `((LLTL[$p] ⊔ LLTL[$q] : TraceSet _))
     | `(¬ $p)          => `((LLTL[$p]ᶜ : TraceSet _))
@@ -240,11 +238,13 @@ local macro "declare_lltl_notation " vars:ident* " : " ltl:term " => " t:term : 
   let unexpandLHS : Term := Syntax.mkApp (← `($$_:ident)) <| args.map (⟨antiquote vars ·⟩)
   let unexpandRHS ← `(`(LLTL[$macroLHS]))
   let unexpandRHS ← vars.foldrM (init := unexpandRHS) fun var unexpandRHS => `(let $var:ident := stripLLTL $var; $unexpandRHS)
+  let unexpandName ← withFreshMacroScope <| MonadQuotation.addMacroScope `lltlUnexpand
+  let unexpandId := mkIdentFrom c unexpandName (canonical := true)
   `(
   macro_rules
     | `(LLTL[$macroLHS]) => `(($macroRHS : TraceSet _))
   @[scoped app_unexpander $c]
-  aux_def unexpand : PrettyPrinter.Unexpander := fun
+  meta def $unexpandId : PrettyPrinter.Unexpander := fun
     | `($unexpandLHS) => $unexpandRHS
     | _ => throw ()
   )
@@ -277,11 +277,13 @@ local macro "declare_lltlv_notation " vars:ident* " : " ltl:term " => " t:term :
   let unexpandLHS : Term := Syntax.mkApp (← `($$_:ident)) <| args.map (⟨antiquote vars ·⟩)
   let unexpandRHS ← `(`(LLTLV[$macroLHS]))
   let unexpandRHS ← vars.foldrM (init := unexpandRHS) fun var unexpandRHS => `(let $var:ident := stripLLTLV $var; $unexpandRHS)
+  let unexpandName ← withFreshMacroScope <| MonadQuotation.addMacroScope `lltlvUnexpand
+  let unexpandId := mkIdentFrom c unexpandName (canonical := true)
   `(
   macro_rules
     | `(LLTLV[$macroLHS]) => `((ensure_trace_fun% $macroRHS : TraceFun _ _))
   @[scoped app_unexpander $c]
-  aux_def unexpand : PrettyPrinter.Unexpander := fun
+  meta def $unexpandId : PrettyPrinter.Unexpander := fun
     | `($unexpandLHS) => $unexpandRHS
     | _ => throw ()
   )
@@ -346,9 +348,9 @@ def delab_sup : Delab := whenPPOption getPPNotation <| whenNotPPOption getPPExpl
   let stx ← annotateCurPos <| ← `($p ∨ $q)
   `(LLTL[$stx])
 
-@[scoped app_delab HasCompl.compl]
+@[scoped app_delab Compl.compl]
 def delab_compl : Delab := whenPPOption getPPNotation <| whenNotPPOption getPPExplicit do
-  let_expr HasCompl.compl ty _ _ := (← getExpr) | failure
+  let_expr Compl.compl ty _ _ := (← getExpr) | failure
   let ty ← whnfR ty
   guard <| ty.isAppOf ``TraceSet
   let p := stripLLTL (← withAppArg delab)

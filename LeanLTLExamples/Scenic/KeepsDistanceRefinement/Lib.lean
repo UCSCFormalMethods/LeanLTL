@@ -45,13 +45,13 @@ abbrev max_rdc_delta := LLTLV[(((delta_stopping_time)) * (((((true_relative_spee
 abbrev buffer_dist := LLTLV[(((5) + ((0) ⊔ (((max_rdc_delta)) + ((rel_dist_covered))))) + (5.4)) + (1)]
 
 -- Top Level Assumptions 
-abbrev A0 := LLTL[𝐆 ((←self._lane_is_not_None))]
-abbrev A1 := LLTL[𝐆 (((0) ≤ ((←self.speed))) ∧ (((←self.speed)) ≤ (5.4)))]
-abbrev A2 := LLTL[𝐆 (((0) ≤ ((←lead_car.speed))) ∧ (((←lead_car.speed)) ≤ (5.4)))]
-abbrev A3 := LLTL[𝐆 (((-(0.9)) ≤ ((𝐗 ((←self.speed))) - ((←self.speed)))) ∧ (((𝐗 ((←self.speed))) - ((←self.speed))) ≤ (0.5)))]
-abbrev A4 := LLTL[𝐆 (((-(0.9)) ≤ ((𝐗 ((←lead_car.speed))) - ((←lead_car.speed)))) ∧ (((𝐗 ((←lead_car.speed))) - ((←lead_car.speed))) ≤ (0.5)))]
-abbrev A5 := LLTL[(((←lead_dist)) > ((←buffer_dist))) ∧ (((←self.speed)) = (0))]
-abbrev A6 := LLTL[𝐆 ((𝐗 ((←lead_dist))) = (((←lead_dist)) - ((←true_relative_speed))))]
+abbrev A0 := LLTL[𝐆 ((←ˢself._lane_is_not_None))]
+abbrev A1 := LLTL[𝐆 (((0) ≤ ((←ˢself.speed))) ∧ (((←ˢself.speed)) ≤ (5.4)))]
+abbrev A2 := LLTL[𝐆 (((0) ≤ ((←ˢlead_car.speed))) ∧ (((←ˢlead_car.speed)) ≤ (5.4)))]
+abbrev A3 := LLTL[𝐆 (((-(0.9)) ≤ ((𝐗 ((←ˢself.speed))) - ((←ˢself.speed)))) ∧ (((𝐗 ((←ˢself.speed))) - ((←ˢself.speed))) ≤ (0.5)))]
+abbrev A4 := LLTL[𝐆 (((-(0.9)) ≤ ((𝐗 ((←ˢlead_car.speed))) - ((←ˢlead_car.speed)))) ∧ (((𝐗 ((←ˢlead_car.speed))) - ((←ˢlead_car.speed))) ≤ (0.5)))]
+abbrev A5 := LLTL[(((←ˢlead_dist)) > ((←ˢbuffer_dist))) ∧ (((←ˢself.speed)) = (0))]
+abbrev A6 := LLTL[𝐆 ((𝐗 ((←ˢlead_dist))) = (((←ˢlead_dist)) - ((←ˢtrue_relative_speed))))]
 
 abbrev assumptions : TraceSet TraceState := LLTL[A0 ∧ A1 ∧ A2 ∧ A3 ∧ A4 ∧ A5 ∧ A6]
 
@@ -60,15 +60,15 @@ abbrev assumptions : TraceSet TraceState := LLTL[A0 ∧ A1 ∧ A2 ∧ A3 ∧ A4 
 abbrev i_assumptions : TraceSet TraceState := LLTL[⊤]
 
 -- Internal Guarantees 
-abbrev IG0 := LLTL[𝐆 (((←behind_car)) → (((((←lead_dist)) - (0.1)) ≤ ((←SCENIC_INTERNAL_VAR_0))) ∧ (((←SCENIC_INTERNAL_VAR_0)) ≤ (((←lead_dist)) + (0.1)))))]
-abbrev IG1 := LLTL[𝐆 (((←SCENIC_INTERNAL_VAR_1)) = ((←self.speed)))]
-abbrev IG2 := LLTL[𝐆 (((𝐗 ((←SCENIC_INTERNAL_VAR_0))) ≤ (((←p_buffer_dist)) + (0.1))) → ((𝐗 ((←SCENIC_INTERNAL_VAR_4))) = (-(1))))]
-abbrev IG3 := LLTL[𝐆 ((((←SCENIC_INTERNAL_VAR_4)) = (-(1))) → (((𝐗 ((←self.speed))) = (0)) ∨ ((𝐗 ((←self.speed))) = (((←self.speed)) - (0.9)))))]
+abbrev IG0 := LLTL[𝐆 (((←ˢbehind_car)) → (((((←ˢlead_dist)) - (0.1)) ≤ ((←ˢSCENIC_INTERNAL_VAR_0))) ∧ (((←ˢSCENIC_INTERNAL_VAR_0)) ≤ (((←ˢlead_dist)) + (0.1)))))]
+abbrev IG1 := LLTL[𝐆 (((←ˢSCENIC_INTERNAL_VAR_1)) = ((←ˢself.speed)))]
+abbrev IG2 := LLTL[𝐆 (((𝐗 ((←ˢSCENIC_INTERNAL_VAR_0))) ≤ (((←ˢp_buffer_dist)) + (0.1))) → ((𝐗 ((←ˢSCENIC_INTERNAL_VAR_4))) = (-(1))))]
+abbrev IG3 := LLTL[𝐆 ((((←ˢSCENIC_INTERNAL_VAR_4)) = (-(1))) → (((𝐗 ((←ˢself.speed))) = (0)) ∨ ((𝐗 ((←ˢself.speed))) = (((←ˢself.speed)) - (0.9)))))]
 
 abbrev i_guarantees : TraceSet TraceState := LLTL[IG0 ∧ IG1 ∧ IG2 ∧ IG3]
 
 -- Top Level Guarantees 
-abbrev G0 := LLTL[𝐆 (((←lead_dist)) > (5))]
+abbrev G0 := LLTL[𝐆 (((←ˢlead_dist)) > (5))]
 
 abbrev guarantees : TraceSet TraceState := LLTL[G0]
 

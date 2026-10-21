@@ -16,7 +16,7 @@ variable {t : Trace σ} {f f₁ f₂ f₃ f₄ : TraceSet σ}
 open scoped symmDiff
 
 @[ext]
-protected def ext {f g : TraceSet σ} (h : ∀ t, (t ⊨ f) ↔ (t ⊨ g)) : f = g := by
+protected theorem ext {f g : TraceSet σ} (h : ∀ t, (t ⊨ f) ↔ (t ⊨ g)) : f = g := by
   cases f
   cases g
   rw [mk.injEq]
@@ -49,10 +49,12 @@ instance : CompleteLattice (TraceSet σ) where
   sInf := TraceSet.all
   top := TraceSet.true
   bot := TraceSet.false
-  le_sSup s p hp t ht := ⟨p, hp, ht⟩
-  sSup_le s p hp t ht := by obtain ⟨q, hq, ht⟩ := ht; exact hp q hq t ht
-  sInf_le s p hp t ht := ht p hp
-  le_sInf s p hp t ht q hq := hp q hq t ht
+  isLUB_sSup s :=
+    ⟨fun p hp t ht ↦ ⟨p, hp, ht⟩,
+      fun p hp t ht ↦ by obtain ⟨q, hq, ht⟩ := ht; exact hp hq t ht⟩
+  isGLB_sInf s :=
+    ⟨fun p hp t ht ↦ ht p hp,
+      fun p hp t ht q hq ↦ hp hq t ht⟩
   le_top _ _ _ := trivial
   bot_le _ _ h := False.elim h
 
@@ -158,7 +160,7 @@ open scoped symmDiff
 lemma sat_release_iff' :
     (t ⊨ f₁ 𝐑 f₂) ↔ ∀ (n : ℕ), (∃ i < n, t ⊨ 𝐗ˢ(i) f₁) ∨ (t ⊨ 𝐗ʷ(n) f₂) := by
   simp only [sat_release_iff, imp_iff_not_or]
-  push_neg
+  push Not
   rfl
 
 @[push_ltl] theorem sat_finally_iff : (t ⊨ 𝐅 f) ↔ ∃ n, t ⊨ 𝐗ˢ(n) f := by
@@ -211,7 +213,7 @@ theorem sem_imp_iff_sem_ential : (f₁ ⇒ f₂) ↔ ⊨ f₁ ⇨ f₂ := Iff.rf
   simp [sem_entail_iff, sat_true_iff]
 
 @[simp] theorem sem_entail_false [Nonempty (Trace σ)] : ¬ ⊨ (⊥ : TraceSet σ) := by
-  simp [sem_entail_iff, sat_false_iff, exists_true_iff_nonempty]
+  simp [sem_entail_iff, sat_false_iff]
 
 lemma lt_of_sat_sshift {n : ℕ} (h : t ⊨ 𝐗ˢ(n) f) : n < t.length := by
   rw [sat_sshift_iff] at h
@@ -268,7 +270,7 @@ lemma not_wshift (n : ℕ) : (𝐗ʷ(n) f)ᶜ = 𝐗ˢ(n) fᶜ := by ext t; simp
 @[push_not_ltl] lemma not_globally : (𝐆 f)ᶜ = 𝐅 fᶜ := by ext t; simp [push_ltl]
 
 @[push_not_ltl, neg_norm_ltl]
-lemma not_and : (f₁ ⊓ f₂)ᶜ = f₁ᶜ ⊔ f₂ᶜ := by ext t; simp [push_ltl, imp_iff_not_or]
+lemma not_and : (f₁ ⊓ f₂)ᶜ = f₁ᶜ ⊔ f₂ᶜ := by ext t; simp [push_ltl]
 
 @[push_not_ltl, neg_norm_ltl]
 lemma not_or : (f₁ ⊔ f₂)ᶜ = f₁ᶜ ⊓ f₂ᶜ := by ext t; simp [push_ltl]
@@ -385,7 +387,7 @@ lemma until_true : f 𝐔 ⊤  = ⊤  := by
 
 @[simp, neg_norm_ltl]
 lemma until_false : f 𝐔 ⊥ = ⊥ := by
-  ext t; simp [push_ltl, iff_false]
+  ext t; simp [push_ltl]
 
 lemma false_release : ⊥ 𝐑 f = 𝐆 f := by
   rw [globally_eq_not_finally_not, ← true_until]
@@ -556,7 +558,7 @@ lemma sshift_or_wshift (n : ℕ) : (𝐗ˢ(n) f₁) ⊔ (𝐗ʷ(n) f₂) = 𝐗�
   rw [sup_comm, wshift_or_sshift, sup_comm]
 
 lemma until_or_distrib : f₁ 𝐔 (f₂ ⊔ f₃) = (f₁ 𝐔 f₂) ⊔ (f₁ 𝐔 f₃) := by
-  ext t; simp only [push_ltl, exists_or, ← exists_or, ← and_or_left]
+  ext t; simp only [push_ltl, ← exists_or, ← and_or_left]
 
 lemma and_until_distrib : (f₁ ⊓ f₂) 𝐔 f₃ = (f₁ 𝐔 f₃) ⊓ (f₂ 𝐔 f₃) := by
   ext t
@@ -577,10 +579,10 @@ lemma and_until_distrib : (f₁ ⊓ f₂) 𝐔 f₃ = (f₁ 𝐔 f₃) ⊓ (f₂
       simp_all
 
 lemma release_and_distrib : f₁ 𝐑 (f₂ ⊓ f₃) = (f₁ 𝐑 f₂) ⊓ (f₁ 𝐑 f₃) := by
-  simp [release_eq, not_or, not_and, until_or_distrib]
+  simp [release_eq, until_or_distrib]
 
 lemma or_release_distrib : (f₁ ⊔ f₂) 𝐑 f₃ = (f₁ 𝐑 f₃) ⊔ (f₂ 𝐑 f₃) := by
-  simp [release_eq, not_or, not_and, and_until_distrib]
+  simp [release_eq, and_until_distrib]
 
 lemma finally_or_distrib : 𝐅 (f₁ ⊔ f₂) = 𝐅 f₁ ⊔ 𝐅 f₂ := by
   ext t; simp [push_ltl, exists_or]
@@ -736,7 +738,7 @@ theorem sat_finally_imp_of (h : t ⊨ 𝐅 f₁ ⇨ 𝐅 f₂) : t ⊨ 𝐅 (f�
     simp [h']
   · simp only [sat_finally_iff, sat_sshift_iff, not_exists] at h'
     specialize h 0
-    simp only [CharP.cast_eq_zero, Trace.nempty, Trace.shift_zero, h', exists_false, exists_const,
+    simp only [CharP.cast_eq_zero, Trace.nempty, Trace.shift_zero, h', exists_false,
       imp_false, forall_const] at h
     use 0
     simp [h]
@@ -824,12 +826,13 @@ theorem until_eq_or_and :
       | zero => simp at h3; simp [h3]
       | succ n =>
         right
-        simp [Trace.shift_unshift_succ] at h3
+        rw [Trace.shift_unshift_succ] at h3
         have h1' := h1 0 (by simp) (by simp)
         rw [Trace.shift_zero] at h1'
         refine ⟨h1', n, ?_, (by simpa using h2), h3⟩
         intro i hi ht
         have := h1 (i + 1) (by omega) (by simp [ht])
+        rw [Trace.shift_unshift_succ] at this
         simpa using this
     · rintro (h | ⟨h1, n, h3, h4, h5⟩)
       · use 0
@@ -869,6 +872,19 @@ theorem entail_of_globally (h : ⊨ 𝐆 f) : ⊨ f := by
   intro t
   exact entail_globally_imp t (h t)
 
+private lemma eq_of_lt_sub_pred {n m k : ℕ} (hn : 0 < n) (hm : m < n - (n - 1))
+    (hk : (k : ℕ∞) < (n : ℕ∞) - (n - 1 : ℕ)) : m = k := by
+  rw [← ENat.natCast_sub] at hk
+  norm_cast at hk
+  omega
+
+private lemma sub_one_add_eq_of_lt {n m k : ℕ} (hm : m < n) (hk : k < n) :
+    n - k - 1 + k = n - m - 1 + m := by
+  omega
+
+private lemma sub_one_lt_sub_of_lt {n k : ℕ} (hk : k < n) : n - k - 1 < n - k := by
+  omega
+
 theorem globally_finally_iff_of_finite (h : t.Finite) : (t ⊨ 𝐆 𝐅 f) ↔ (t ⊨ 𝐅 𝐆 f) := by
   simp [push_ltl]
   obtain ⟨n, h1, h2⟩ := h.exists
@@ -880,12 +896,14 @@ theorem globally_finally_iff_of_finite (h : t.Finite) : (t ⊨ 𝐆 𝐅 f) ↔ 
     intro m hm
     obtain ⟨k, hk, hf⟩ := h (n - 1) (by omega)
     convert hf
-    omega
+    exact eq_of_lt_sub_pred h1 hm hk
   · rintro ⟨m, hm, h2⟩ k hk
-    use n - k - 1, (by omega)
-    specialize h2 (n - m - 1) (by omega)
+    use n - k - 1, (by
+      rw [← ENat.natCast_sub]
+      exact_mod_cast sub_one_lt_sub_of_lt hk)
+    specialize h2 (n - m - 1) (sub_one_lt_sub_of_lt hm)
     convert h2 using 2
-    omega
+    exact sub_one_add_eq_of_lt hm hk
 
 theorem entail_fin_globally_finally_comm : ⊨ᶠ 𝐆 𝐅 f ⇔ 𝐅 𝐆 f := by
   intro t
@@ -969,10 +987,10 @@ theorem globally_induction {p : TraceSet σ} (t : Trace σ)
   . rename_i n ih
     simp [push_ltl] at step
     have h2 : n < t.length := by
-      rw [ENat.coe_add] at h_n
+      rw [ENat.natCast_add] at h_n
       simp at h_n
       refine (ENat.add_one_le_iff ?_).mp ?_
-      exact ENat.coe_ne_top n
+      exact ENat.natCast_ne_top n
       exact le_of_lt h_n
     specialize ih h2
     specialize step n h2 ih (lt_tsub_iff_left.mpr h_n)

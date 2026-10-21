@@ -31,14 +31,14 @@ protected def toFun (t : Trace σ) (n : ℕ) (h : n < t.length := by simp [Trace
 protected def toFun! [Inhabited σ] (t : Trace σ) (n : ℕ) : σ :=
   (t.toFun? n).get!
 
-protected def inhabited (t : Trace σ) : Inhabited σ := ⟨t.toFun 0⟩
+@[reducible] protected def inhabited (t : Trace σ) : Inhabited σ := ⟨t.toFun 0⟩
 
 /-- Transforms the states of a trace. -/
 protected def map (f : σ → σ') (t : Trace σ) : Trace σ' where
   toFun? := fun n => (t.toFun? n).map f
   length := t.length
   nempty := t.nempty
-  defined := by simpa only [Option.isSome_map'] using t.defined
+  defined := by simpa only [Option.isSome_map] using t.defined
 
 /-- A one-state trace. -/
 protected def singleton (s : σ) : Trace σ where
@@ -61,7 +61,7 @@ protected def shift (t : Trace σ) (i : ℕ) (h : i < t.length) : Trace σ where
       _ ↔ (t.toFun? (n + i)).isSome       := t.defined (n + i)
 
 /-- Inserts a state to the front of a trace. -/
-protected def unshift (s : σ) (t : Trace σ) : Trace σ where
+@[reducible] protected def unshift (s : σ) (t : Trace σ) : Trace σ where
   toFun?
     | 0   => s
     | n+1 => t.toFun? n

@@ -19,13 +19,13 @@ abbrev max_speed : TraceFun TraceState ℚ := LLTLV[5.4]
 
 -- # Lemmas
 lemma max_rdc_change :
-    ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 ((𝐗 (← rel_dist_covered)) ≤ (0 ⊔ ((← max_rdc_delta) + (← rel_dist_covered))))] := by
+    ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 ((𝐗 (←ˢ rel_dist_covered)) ≤ (0 ⊔ ((←ˢ max_rdc_delta) + (←ˢ rel_dist_covered))))] := by
   -- Setup
   intro t h
   have a_ig := h
   repeat rw [sat_and_iff] at h
   rcases h with ⟨⟨hA0, hA1, hA2, hA3, hA4, hA5, hA6⟩, ⟨hIG0, hIG1, hIG2, hIG3⟩⟩
-  simp only [A0, A1, A2, A3, A4, A5, A6, IG0, IG1, IG2, IG3] at *
+  simp only [A0, A1, A2, A3, A4, A6, IG0, IG1, IG2, IG3] at *
 
   simp [push_ltl]
   intro n h_n
@@ -34,8 +34,7 @@ lemma max_rdc_change :
     specialize hA6 n
     simp [push_ltl, h_n] at hA6
     exact hA6.1
-  use ↑⌈(t.toFun! (1 + n)).N5 / 0.9⌉ * ((t.toFun! (1 + n)).N5 - (t.toFun! (1 + n)).N3 + 1.6)
-  simp only [and_true, h_n', true_and]
+  refine ⟨h_n', ?_⟩
 
   have h_n'' : ↑(n + 1) < t.length := by
     revert h_n'
@@ -78,7 +77,6 @@ lemma max_rdc_change :
   by_cases h_neg1: (N5 - N3 + 0.9 + 0.5 + 1.6) ≤ 0
   . have h_neg2: (XN5 - XN3 + 0.4) ≤ 0 := by linarith
     left
-    simp at h_neg2
     qify at *; nlinarith
 
   right
@@ -90,49 +88,49 @@ lemma max_rdc_change :
   qify at *; nlinarith
 
 -- Show trivial safety if we are outside the buffer distance.
-lemma gt_bd_safety : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 (((← lead_dist) > (← buffer_dist)) → ((← lead_dist) > (← min_dist)))] := by
+lemma gt_bd_safety : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 (((←ˢ lead_dist) > (←ˢ buffer_dist)) → ((←ˢ lead_dist) > (←ˢ min_dist)))] := by
   -- Setup
-  simp [TraceSet.sem_imp]
+  simp
   intro t h
   have a_ig := h
   repeat rw [sat_and_iff] at h
   rcases h with ⟨⟨hA0, hA1, hA2, hA3, hA4, hA5, hA6⟩, ⟨hIG0, hIG1, hIG2, hIG3⟩⟩
-  simp only [A0, A1, A2, A3, A4, A5, A6, IG0, IG1, IG2, IG3] at *
+  simp only [A0, A1, A2, A3, A4, A6, IG0, IG1, IG2, IG3] at *
 
   simp [push_ltl]
   intro n h_n h
 
-  have : t.shift n h_n ⊨ LLTL[0 ≤ 0 ⊔ ((← max_rdc_delta) + (← rel_dist_covered))] := by simp [push_ltl]
+  have : t.shift n h_n ⊨ LLTL[0 ≤ 0 ⊔ ((←ˢ max_rdc_delta) + (←ˢ rel_dist_covered))] := by simp [push_ltl]
   simp [push_ltl, -le_sup_iff, -le_sup_left] at this
 
   linarith
 
-lemma le_bd_imp_bc : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 (((← lead_dist) ≤ (← buffer_dist)) → (← behind_car))] := by
+lemma le_bd_imp_bc : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 (((←ˢ lead_dist) ≤ (←ˢ buffer_dist)) → (←ˢ behind_car))] := by
   -- Setup
   intro t h
   have a_ig := h
   repeat rw [sat_and_iff] at h
   rcases h with ⟨⟨hA0, hA1, hA2, hA3, hA4, hA5, hA6⟩, ⟨hIG0, hIG1, hIG2, hIG3⟩⟩
-  simp only [A0, A1, A2, A3, A4, A5, A6, IG0, IG1, IG2, IG3] at *
+  simp only [A0, A1, A2, A3, A4, A6, IG0, IG1, IG2, IG3] at *
 
   simp [sat_globally_iff, sat_wshift_iff, sat_imp_iff]
   intro n h_n h
   simp [push_ltl] at h ⊢
   refine ⟨_, Iff.rfl, ?_⟩
 
-  by_cases h_sup : t.shift n h_n ⊨ LLTL[((← max_rdc_delta) + (← rel_dist_covered)) ≤ 0] <;> simp [push_ltl] at h_sup
-  . have : t.shift n h_n ⊨ LLTL[(0 ⊔ ((← max_rdc_delta) + (← rel_dist_covered))) = 0] := by simp [push_ltl]; trivial
+  by_cases h_sup : t.shift n h_n ⊨ LLTL[((←ˢ max_rdc_delta) + (←ˢ rel_dist_covered)) ≤ 0] <;> simp [push_ltl] at h_sup
+  . have : t.shift n h_n ⊨ LLTL[(0 ⊔ ((←ˢ max_rdc_delta) + (←ˢ rel_dist_covered))) = 0] := by simp [push_ltl]; trivial
     simp [push_ltl, -sup_eq_left] at this
     simp [this] at h
     simp
     linarith
 
-  have : t.shift n h_n ⊨ LLTL[(0 ⊔ ((← max_rdc_delta) + (← rel_dist_covered))) = ((← max_rdc_delta) + (← rel_dist_covered))] := by
+  have : t.shift n h_n ⊨ LLTL[(0 ⊔ ((←ˢ max_rdc_delta) + (←ˢ rel_dist_covered))) = ((←ˢ max_rdc_delta) + (←ˢ rel_dist_covered))] := by
     simp [push_ltl]; linarith
   simp [push_ltl, -sup_eq_right] at this
   simp [this] at h
 
-  have ST_bounds : t.shift n h_n ⊨ LLTL[0 ≤ ⌈((← self.speed) + (← max_accel))/(← max_brake)⌉ ∧ ⌈((← self.speed) + (← max_accel))/(← max_brake)⌉ ≤ ⌈((← max_speed) + (← max_accel))/(← max_brake)⌉] := by
+  have ST_bounds : t.shift n h_n ⊨ LLTL[0 ≤ ⌈((←ˢ self.speed) + (←ˢ max_accel))/(←ˢ max_brake)⌉ ∧ ⌈((←ˢ self.speed) + (←ˢ max_accel))/(←ˢ max_brake)⌉ ≤ ⌈((←ˢ max_speed) + (←ˢ max_accel))/(←ˢ max_brake)⌉] := by
     simp [push_ltl]
 
     simp [push_ltl] at hA1
@@ -155,13 +153,13 @@ lemma le_bd_imp_bc : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 (((← lea
 
   interval_cases using ST_bound1, ST_bound2 <;> linarith
 
-lemma le_nbc_imp_ld_bd : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 ((𝐗ˢ ((← lead_dist) ≤ (← buffer_dist))) → (← behind_car))] := by
+lemma le_nbc_imp_ld_bd : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 ((𝐗ˢ ((←ˢ lead_dist) ≤ (←ˢ buffer_dist))) → (←ˢ behind_car))] := by
   -- Setup
   intro t h
   have a_ig := h
   repeat rw [sat_and_iff] at h
   rcases h with ⟨⟨hA0, hA1, hA2, hA3, hA4, hA5, hA6⟩, ⟨hIG0, hIG1, hIG2, hIG3⟩⟩
-  simp only [A0, A1, A2, A3, A4, A5, A6, IG0, IG1, IG2, IG3] at *
+  simp only [A0, A1, A2, A3, A4, A6, IG0, IG1, IG2, IG3] at *
 
   simp [sat_globally_iff, sat_wshift_iff, sat_imp_iff]
   intro n h_n h_bc
@@ -175,7 +173,7 @@ lemma le_nbc_imp_ld_bd : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 ((𝐗
     · norm_cast; omega
 
   have ST_bounds : t.shift (n+1) h_n'' ⊨
-      LLTL[0 ≤ ⌈((← self.speed)+(← max_accel))/(← max_brake)⌉ ∧ ⌈((← self.speed)+(← max_accel))/(← max_brake)⌉ ≤ ⌈((← max_speed)+(← max_accel))/(← max_brake)⌉] := by
+      LLTL[0 ≤ ⌈((←ˢ self.speed)+(←ˢ max_accel))/(←ˢ max_brake)⌉ ∧ ⌈((←ˢ self.speed)+(←ˢ max_accel))/(←ˢ max_brake)⌉ ≤ ⌈((←ˢ max_speed)+(←ˢ max_accel))/(←ˢ max_brake)⌉] := by
     simp [push_ltl]
 
     simp [push_ltl] at hA1
@@ -212,8 +210,7 @@ lemma le_nbc_imp_ld_bd : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 ((𝐗
   simp [hA6] at h_bc
 
   by_cases h_neg : ↑⌈(XN5 + 0.5) / 0.9⌉ * (XN5 - XN3 + 0.9 + 0.5 + 1.6) ≤ 0
-  · simp at h_neg
-    simp [h_neg] at h_bc
+  · simp [h_neg] at h_bc
     ring_nf at *; linarith
 
   simp at h_neg
@@ -227,14 +224,14 @@ lemma le_nbc_imp_ld_bd : ⊨ LLTL[(assumptions ∧ i_guarantees) → 𝐆 ((𝐗
 
 -- lead_dist ≤ buffer_dist always implies our next speed will be 0 or decrease by min_slowdown.
 lemma le_bd_slowdown : ⊨ LLTL[(assumptions ∧ i_guarantees) →
-    𝐆 (((← lead_dist) ≤ (← buffer_dist)) →
-      (((𝐗 (← self.speed)) = 0) ∨ ((𝐗 (← self.speed)) = (← self.speed) - 0.9)))] := by
+    𝐆 (((←ˢ lead_dist) ≤ (←ˢ buffer_dist)) →
+      (((𝐗 (←ˢ self.speed)) = 0) ∨ ((𝐗 (←ˢ self.speed)) = (←ˢ self.speed) - 0.9)))] := by
   -- Setup
   intro t h
   have a_ig := h
   repeat rw [sat_and_iff] at h
   rcases h with ⟨⟨hA0, hA1, hA2, hA3, hA4, hA5, hA6⟩, ⟨hIG0, hIG1, hIG2, hIG3⟩⟩
-  simp only [A0, A1, A2, A3, A4, A5, A6, IG0, IG1, IG2, IG3] at *
+  simp only [A0, A1, A2, A3, A4, A6, IG0, IG1, IG2, IG3] at *
 
   simp [sat_globally_iff, sat_wshift_iff, sat_imp_iff]
   intro n' h_n' h_ld_bd
@@ -252,17 +249,17 @@ lemma le_bd_slowdown : ⊨ LLTL[(assumptions ∧ i_guarantees) →
 
   -- Extract guarantee about behind_car using le_bd_imp_bc
   have le_bd_imp_bc := le_bd_imp_bc
-  simp [TraceSet.sem_imp] at le_bd_imp_bc
   specialize le_bd_imp_bc t a_ig
   simp [sat_globally_iff, sat_wshift_iff, sat_imp_iff] at le_bd_imp_bc
   specialize le_bd_imp_bc n' h_n' h_ld_bd
 
   have : ¬ (n' = 0) := by
-    by_contra; rename_i contra
-    simp [push_ltl, contra] at h_ld_bd hA5
+    intro h_eq
+    simp [push_ltl, h_eq] at h_ld_bd hA5
     linarith
 
-  have h_nm1 : n' - 1 < t.length := by exact tsub_lt_of_lt h_n'
+  have h_nm1 : (n' - 1 : ℕ) < t.length := by
+    exact lt_of_le_of_lt (by norm_cast; omega) h_n'
   have h_tl_nm1 : 1 < t.length - (↑n' - 1) := by
     -- have foo := h_n'
     clear h_ld_bd le_bd_imp_bc
@@ -271,7 +268,6 @@ lemma le_bd_slowdown : ⊨ LLTL[(assumptions ∧ i_guarantees) →
     . exact Batteries.compareOfLessAndEq_eq_lt.mp rfl
     norm_cast at h_n' ⊢
     omega
-
   have nmp1 : 1 + (n' - 1) = n' := by omega
 
   -- Extract guarantees about perception system output
@@ -286,20 +282,20 @@ lemma le_bd_slowdown : ⊨ LLTL[(assumptions ∧ i_guarantees) →
   specialize le_nbc_imp_ld_bd t a_ig (n' - 1) h_nm1 (by
     simp [push_ltl]
     use h_tl_nm1
-    simp [nmp1]
     simp [push_ltl] at h_ld_bd
-    trivial
+    simpa only [nmp1] using h_ld_bd
   )
 
   -- Extract guarantees about control system signals
-  have h_pd_bd_err : t.shift (n' - 1) h_nm1 ⊨ LLTL[(𝐗 (← SCENIC_INTERNAL_VAR_0)) ≤ (← p_buffer_dist) + 0.1] := by
-    simp [push_ltl] at hIG0_2 h_ld_bd hA1 ⊢
+  have h_pd_bd_err : t.shift (n' - 1) h_nm1 ⊨ LLTL[(𝐗 (←ˢ SCENIC_INTERNAL_VAR_0)) ≤ (←ˢ p_buffer_dist) + 0.1] := by
+    simp [push_ltl]
+    refine ⟨h_tl_nm1, ?_⟩
+    simp [TraceFun.shift, h_tl_nm1, push_ltl, nmp1] at hIG0_2 h_ld_bd hA1 ⊢
     specialize hA1 n' h_n'
-    simp [h_tl_nm1, nmp1]
     refine le_trans hIG0_2 ?_
     rw [← le_sub_iff_add_le]
     refine le_trans h_ld_bd ?_
-    simp only [add_sub_cancel_right, add_le_add_iff_right, add_le_add_iff_left, le_refl, true_and]
+    simp only [add_sub_cancel_right, add_le_add_iff_right, add_le_add_iff_left]
 
     simp [push_ltl] at hIG1
     specialize hIG1 n' h_n'
@@ -319,7 +315,7 @@ lemma le_bd_slowdown : ⊨ LLTL[(assumptions ∧ i_guarantees) →
       ring_nf at *; linarith
 
 
-    simp only [hIG1, le_refl, true_and]
+    simp only [hIG1]
 
     have : (N5 - N3) ≤ (N0 - XN0 + 1.6) := by
       simp [push_ltl] at hA3 hA4
@@ -351,9 +347,8 @@ lemma le_bd_slowdown : ⊨ LLTL[(assumptions ∧ i_guarantees) →
   simp [sat_globally_iff, sat_wshift_iff, sat_imp_iff] at hIG3
   specialize hIG3 (n') h_n' (by
     simp [push_ltl] at hIG2 ⊢
-    simp [h_tl_nm1] at hIG2 ⊢
     simp [nmp1] at hIG2
-    trivial
+    exact hIG2.2
   )
 
   exact hIG3
@@ -367,39 +362,39 @@ lemma le_bd_slowdown : ⊨ LLTL[(assumptions ∧ i_guarantees) →
 def n₀_reqs (t: Trace TraceState) (n: ℕ) (h_n: n < t.length) (n₀: ℕ) :=
   ∃ (h_n₀_n : n₀ ≤ n),
   (((t.shift (n₀-1) (by
-    revert h_n h_n₀_n; cases t.length; simp only [ENat.coe_lt_top, implies_true]; norm_cast; omega
-  )) ⊨ LLTL[(← lead_dist) > (← buffer_dist)])
+    revert h_n h_n₀_n; cases t.length; simp only [ENat.natCast_lt_top, implies_true]; norm_cast; omega
+  )) ⊨ LLTL[(←ˢ lead_dist) > (←ˢ buffer_dist)])
   ∧ (∀ (n_i: ℕ) (h_nb_bound : (n₀ ≤ n_i) ∧ (n_i ≤ (n))),
     (((t.shift n_i (by
-      revert h_n h_n₀_n; cases t.length; simp only [ENat.coe_lt_top, implies_true]; norm_cast; omega
-    )) ⊨ LLTL[(← lead_dist) ≤ (← buffer_dist)]))))
+      revert h_n h_n₀_n; cases t.length; simp only [ENat.natCast_lt_top, implies_true]; norm_cast; omega
+    )) ⊨ LLTL[(←ˢ lead_dist) ≤ (←ˢ buffer_dist)]))))
 
 lemma braking_block_bounds (t : Trace TraceState) (h : t ⊨ LLTL[assumptions ∧ i_guarantees])
     (n : ℕ) (h_n : n < t.length)
-    (h_n_le_bd : t.shift n h_n ⊨ LLTL[(← lead_dist) ≤ (← buffer_dist)]) :
+    (h_n_le_bd : t.shift n h_n ⊨ LLTL[(←ˢ lead_dist) ≤ (←ˢ buffer_dist)]) :
     ∃ (n₀: ℕ), (n₀_reqs t n h_n n₀) := by
   -- Setup
   have a_ig := h
   repeat rw [sat_and_iff] at h
   rcases h with ⟨⟨hA0, hA1, hA2, hA3, hA4, hA5, hA6⟩, ⟨hIG0, hIG1, hIG2, hIG3⟩⟩
-  simp only [A0, A1, A2, A3, A4, A5, A6, IG0, IG1, IG2, IG3] at *
+  simp only [A0, A1, A2, A3, A4, A6, IG0, IG1, IG2, IG3] at *
 
   simp [n₀_reqs]
 
   -- We will choose the the timestep after the latest timestep from the set
   -- of timesteps less than n, where lead_dist > buffer_dist
   let sn' := {n' : ℕ | ∃ (h_n': n' < n),
-    (t.shift n' (gt_trans h_n (ENat.coe_lt_coe.mpr h_n')) ⊨ LLTL[(← lead_dist) > (← buffer_dist)])}
+    (t.shift n' (gt_trans h_n (ENat.natCast_lt_natCast.mpr h_n')) ⊨ LLTL[(←ˢ lead_dist) > (←ˢ buffer_dist)])}
   use (sSup sn') + 1
 
   -- Show useful properties about this set
-  simp only [add_tsub_cancel_right, and_imp, exists_and_left, exists_prop]
+  simp only [add_tsub_cancel_right]
   have h_sn'_nempty : sn'.Nonempty := by
     simp only [Set.Nonempty]
     use 0
     simp [sn']
     constructor
-    . by_contra; rename_i contra
+    . by_contra contra
       simp only [not_lt, nonpos_iff_eq_zero] at contra
       simp [contra] at h_n_le_bd
       rcases hA5 with ⟨hA5_1, _⟩
@@ -421,26 +416,26 @@ lemma braking_block_bounds (t : Trace TraceState) (h : t ⊨ LLTL[assumptions �
   constructor
   . simp [sn'] at h_n'_mem ⊢
     exact h_n'_mem
-  . intro n_i h1
-    by_contra; rename_i contra
+  . intro n_i h_lower h_upper
+    by_contra contra
     have := le_csSup h_sn'_ba (?_: n_i ∈ _)
     . linarith
     simp [sn']
     by_cases n_i = n <;> rename_i h_eq
     . simp [h_eq] at contra
       trivial
-    use (by refine Nat.lt_of_le_of_ne h1.right h_eq)
+    use (by refine Nat.lt_of_le_of_ne h_upper h_eq)
     simp [push_ltl] at contra ⊢
     linarith
 
 lemma bb_init_ld (t : Trace TraceState) (h : t ⊨ LLTL[assumptions ∧ i_guarantees])
     (n : ℕ) (h_n : n < t.length)
-    (h_n_le_bd : t.shift n h_n ⊨ LLTL[(← lead_dist) ≤ (← buffer_dist)])
+    (_h_n_le_bd : t.shift n h_n ⊨ LLTL[(←ˢ lead_dist) ≤ (←ˢ buffer_dist)])
     (n₀ : ℕ) (h_n₀ : n₀_reqs t n h_n n₀)
     (i : ℕ) (h_i_bound: i ≤ n - n₀) :
     have h_n_i : n₀ + i < t.length := by
       simp [n₀_reqs] at h_n₀
-      rcases h_n₀ with ⟨h_1, h_2, h_3⟩
+      rcases h_n₀ with ⟨h_1, _h_2, _h_3⟩
       have : n₀ + i ≤ n := by omega
       have : (n₀ + i : ENat) ≤ n := by
         norm_cast
@@ -453,13 +448,13 @@ lemma bb_init_ld (t : Trace TraceState) (h : t ⊨ LLTL[assumptions ∧ i_guaran
   have a_ig := h
   repeat rw [sat_and_iff] at h
   rcases h with ⟨⟨hA0, hA1, hA2, hA3, hA4, hA5, hA6⟩, ⟨hIG0, hIG1, hIG2, hIG3⟩⟩
-  simp only [A0, A1, A2, A3, A4, A5, A6, IG0, IG1, IG2, IG3] at *
+  simp only [A0, A1, A2, A3, A4, A6, IG0, IG1, IG2, IG3] at *
 
   simp only [n₀_reqs] at h_n₀
   rcases h_n₀ with ⟨h_n₀_n, h_n₀_1, h_n₀_2⟩
 
   have : n₀ > 0 := by
-    by_contra; rename_i contra
+    by_contra contra
     simp at contra
     simp [contra] at *
     specialize h_n₀_2 0 (by omega)
@@ -482,7 +477,6 @@ lemma bb_init_ld (t : Trace TraceState) (h : t ⊨ LLTL[assumptions ∧ i_guaran
     specialize hA6 (n₀-1) h_n₀_m1
 
     have max_rdc_change := max_rdc_change
-    simp [TraceSet.sem_imp, -le_sup_iff, -sup_le_iff] at max_rdc_change
     specialize max_rdc_change t a_ig
     simp [push_ltl, -le_sup_iff, -sup_le_iff] at max_rdc_change
     specialize max_rdc_change (n₀-1) h_n₀_m1
@@ -566,6 +560,23 @@ lemma bb_init_ld (t : Trace TraceState) (h : t ⊨ LLTL[assumptions ∧ i_guaran
     simp [this] at h_slowdown hA3 hA4 hA6
 
     simp [add_comm (n₀ + i) 1, hA6] at *
+    have h_shift : (n₀ + i : ℕ) < t.length := by
+      exact lt_trans (by norm_cast; omega) h_n₀_i_1
+    have h_slowdown' :
+        (t.toFun! (1 + (n₀ + i))).N5 = 0 ∨
+          (t.toFun! (1 + (n₀ + i))).N5 = (t.toFun! (n₀ + i)).N5 - 0.9 := by
+      rcases h_slowdown with h_zero | h_decrease
+      · left
+        have h := h_zero.2
+        rw [Trace.toFun!_shift_independent t (n₀ + i) 1 h_shift h_zero.1 _ _] at h
+        exact h
+      · right
+        have h := h_decrease.2
+        have h_zero : (0 : ℕ) < (t.shift (n₀ + i) h_shift).length :=
+          Trace.nempty _
+        rw [Trace.toFun!_shift_independent t (n₀ + i) 1 h_shift h_decrease.1 _ _,
+          Trace.toFun!_shift_independent t (n₀ + i) 0 h_shift h_zero _ _] at h
+        simpa only [zero_add] using h
 
     generalize (t.toFun! (n₀ + i)).N4 = N4 at *
     generalize (t.toFun! (n₀ + i)).N3 = N3 at *
@@ -574,8 +585,8 @@ lemma bb_init_ld (t : Trace TraceState) (h : t ⊨ LLTL[assumptions ∧ i_guaran
     generalize (t.toFun! (1 + (n₀ + i))).N3 = XN3 at *
     generalize (t.toFun! (1 + (n₀ + i))).N5 = XN5 at *
 
-    by_cases h_slowdown_case: XN5 = 0
-    . subst h_slowdown_case
+    rcases h_slowdown' with h_slowdown_case | h_slowdown_case
+    . subst XN5
 
       by_cases this: N5 = 0
       . subst this
@@ -603,8 +614,7 @@ lemma bb_init_ld (t : Trace TraceState) (h : t ⊨ LLTL[assumptions ∧ i_guaran
       simp
       ring_nf at *; nlinarith
 
-    . simp [h_slowdown_case] at h_slowdown
-      simp [h_slowdown]
+    . subst XN5
       have : ⌈(N5 - 0.9) / 0.9⌉ = ⌈N5 / 0.9⌉ - 1 := by
         have : (N5 - 0.9) / 0.9 = N5 / 0.9 - 1 := by ring
         rw [this]
@@ -614,7 +624,7 @@ lemma bb_init_ld (t : Trace TraceState) (h : t ⊨ LLTL[assumptions ∧ i_guaran
       have : ⌈N5 / 0.9⌉ -1 ≥ 0 := by
         refine Int.sub_nonneg_of_le ?_
         refine Int.one_le_ceil_iff.mpr ?_
-        have : XN5 ≥ 0 := by linarith
+        have : N5 - 0.9 ≥ 0 := by linarith
         have : 0 < N5 := by ring_nf at *; linarith
         ring_nf; linarith
       have : XN3 ≥ N3 - 0.9 := by
@@ -667,7 +677,7 @@ theorem imp_guarantees : ⊨ LLTL[(assumptions ∧ i_guarantees) → guarantees]
   have a_ig := h
   repeat rw [sat_and_iff] at h
   rcases h with ⟨⟨hA0, hA1, hA2, hA3, hA4, hA5, hA6⟩, ⟨hIG0, hIG1, hIG2, hIG3⟩⟩
-  simp only [A0, A1, A2, A3, A4, A5, A6, IG0, IG1, IG2, IG3] at *
+  simp only [A0, A1, A2, A3, A4, A6, IG0, IG1, IG2, IG3] at *
 
   apply globally_induction t
   . simp [push_ltl] at hA5 ⊢
@@ -694,16 +704,16 @@ theorem imp_guarantees : ⊨ LLTL[(assumptions ∧ i_guarantees) → guarantees]
     omega
 
   -- Dispatch case where lead_dist > buffer_dist
-  by_cases (t.shift (n + 1) h_n_1) ⊨ LLTL[(← lead_dist) > (← buffer_dist)]
+  by_cases (t.shift (n + 1) h_n_1) ⊨ LLTL[(←ˢ lead_dist) > (←ˢ buffer_dist)]
   . rename_i h_ld_gt_bd
     have gt_bd_safety := gt_bd_safety
-    simp [TraceSet.sem_imp] at gt_bd_safety
+    simp at gt_bd_safety
     specialize gt_bd_safety t a_ig
     simp [sat_globally_iff, sat_wshift_iff, sat_imp_iff] at gt_bd_safety
     specialize gt_bd_safety (n+1) h_n_1 h_ld_gt_bd
     simp [add_comm 1]
     exact gt_bd_safety
-  have h_ld_le_bd : t.shift (n + 1) h_n_1 ⊨ LLTL[(← lead_dist) ≤ (← buffer_dist)] := by
+  have h_ld_le_bd : t.shift (n + 1) h_n_1 ⊨ LLTL[(←ˢ lead_dist) ≤ (←ˢ buffer_dist)] := by
     rename_i goal
     simp [push_ltl] at goal ⊢
     trivial

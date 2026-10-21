@@ -9,13 +9,13 @@ namespace SafeThrottleFilter
 theorem imp_assumptions : ⊨ LLTL[(assumptions ∧ fprops) → guarantees] := by
   simp only [le_top, inf_of_le_right, fprops]
   rintro t ⟨-, hF1, hF2⟩
-  simp only [F0, F1, F2] at *
+  simp only [F1, F2] at *
   simp [guarantees, G0]
 
   simp only [sat_globally_iff, sat_wshift_iff, sat_imp_iff]
   intro n h_n h1
   simp [sat_sget_iff] at h1
-  obtain ⟨_, ⟨h_next_ts, rfl⟩, d, hd, h1⟩ := h1
+  obtain ⟨h_next_ts, d, hd, h1⟩ := h1
   simp [push_ltl, h_next_ts] at hd
   cases hd
   simp [push_ltl] at hF1 hF2

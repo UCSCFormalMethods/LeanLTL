@@ -17,10 +17,10 @@ structure Trace (σ: Type*) where
 
 attribute [simp] Trace.finite
 
-def FuncConst (_: ℕ) := Type*
+def FuncConst (_ : ℕ) : Type 1 := Type
 def FuncVal (n: ℕ) (α) := (args: Fin n → α) → α
 
-def PredConst (_: ℕ) := Type*
+def PredConst (_ : ℕ) : Type 1 := Type
 def PredVal (n: ℕ) (α) := (args: Fin n → α) → Prop
 
 inductive SigmaTerm (σ) (α) where
@@ -75,7 +75,8 @@ def eval_sigma_term (t: Trace σ) (s: SigmaTerm σ α) (fs: (n: ℕ) → FuncCon
   | SigmaTerm.snext v               => if h_not_last: t.trace.length > 1
                                        then
                                         let next_t : Trace σ := {
-                                          trace := t.trace.shift 1 h_not_last
+                                          trace := t.trace.shift 1
+                                            (by simpa only [Nat.cast_one] using h_not_last)
                                           finite := by simp
                                         }
                                         some <| v (next_t.trace.toFun 0 (by simp))
@@ -84,7 +85,8 @@ def eval_sigma_term (t: Trace σ) (s: SigmaTerm σ α) (fs: (n: ℕ) → FuncCon
   | SigmaTerm.wnext v               => if h_not_last: t.trace.length > 1
                                        then
                                         let next_t : Trace σ := {
-                                          trace := t.trace.shift 1 h_not_last
+                                          trace := t.trace.shift 1
+                                            (by simpa only [Nat.cast_one] using h_not_last)
                                           finite := by simp
                                         }
                                         some <| v (next_t.trace.toFun 0 (by simp))
@@ -117,13 +119,15 @@ def sat_phi (t: Trace σ) (p: Phi σ α)
   | Phi.and f₁ f₂     => (sat_phi t f₁ fs ps) ∨ (sat_phi t f₂ fs ps)
   | Phi.snext f       => ∃ (h_not_last: t.trace.length > 1),
                           let next_t : Trace σ := {
-                            trace := t.trace.shift 1 h_not_last
+                            trace := t.trace.shift 1
+                              (by simpa only [Nat.cast_one] using h_not_last)
                             finite := by simp
                           }
                           sat_phi next_t f fs ps
   | Phi.wnext f       => ∀ (h_not_last: t.trace.length > 1),
                           let next_t : Trace σ := {
-                            trace := t.trace.shift 1 h_not_last
+                            trace := t.trace.shift 1
+                              (by simpa only [Nat.cast_one] using h_not_last)
                             finite := by simp
                           }
                           sat_phi next_t f fs ps

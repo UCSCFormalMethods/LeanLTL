@@ -2,16 +2,12 @@ import Mathlib.Data.ENat.Basic
 
 lemma enat_cancel (n m : ENat) (i : Nat) : n + i < m + i ↔ n < m := by
   refine ENat.add_lt_add_iff_right ?h
-  exact ENat.coe_ne_top i
+  exact ENat.natCast_ne_top i
 
 @[simp]
 lemma enat_cancel' (n m : ENat) : n + 1 < m + 1 ↔ n < m := by
   refine ENat.add_lt_add_iff_right ?h
-  exact ENat.coe_ne_top 1
-
-@[simp] lemma ENat.one_lt_top : (1 : ℕ∞) < ⊤ := by
-  rw [← Nat.cast_one]
-  apply ENat.coe_lt_top
+  exact ENat.natCast_ne_top 1
 
 lemma enat_leq_sub {n m : ENat} {a : ℕ} (h: n < m): (n - a: ENat) < m := by
   exact tsub_lt_of_lt h

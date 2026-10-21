@@ -66,14 +66,14 @@ abbrev p_buffer_dist := LLTLV[(((5) + ((0) ⊔ (((p_max_rdc_delta)) + ((p_rel_di
 abbrev assumptions : TraceSet TraceState := LLTL[⊤]
 
 -- Function Properties 
-abbrev F0 := LLTL[(←last_dist) = (←0.0)]
-abbrev F1 := LLTL[𝐆 ((←modulated_throttle) = (←CF_N2))]
-abbrev F2 := LLTL[𝐆 ((𝐗 (←last_dist) = (←CF_N1)))]
+abbrev F0 := LLTL[(←ˢlast_dist) = (←ˢ0.0)]
+abbrev F1 := LLTL[𝐆 ((←ˢmodulated_throttle) = (←ˢCF_N2))]
+abbrev F2 := LLTL[𝐆 ((𝐗 (←ˢlast_dist) = (←ˢCF_N1)))]
 
 abbrev fprops : TraceSet TraceState := LLTL[F0 ∧ F1 ∧ F2]
 
 -- Guarantees 
-abbrev G0 := LLTL[𝐆 (((𝐗 ((←dist))) ≤ (((←p_buffer_dist)) + (0.1))) → ((𝐗 ((←modulated_throttle))) = (-(1))))]
+abbrev G0 := LLTL[𝐆 (((𝐗 ((←ˢdist))) ≤ (((←ˢp_buffer_dist)) + (0.1))) → ((𝐗 ((←ˢmodulated_throttle))) = (-(1))))]
 
 abbrev guarantees : TraceSet TraceState := LLTL[G0]
 
